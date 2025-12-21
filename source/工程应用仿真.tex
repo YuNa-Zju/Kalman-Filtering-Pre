@@ -30,7 +30,7 @@
         \begin{block}{信任模型 ($\bm{Q}$ 小, $\bm{R}$ 大)}
             \begin{itemize}
                 \item 滤波结果非常平滑
-                \item 对突变反应滞后 (Lag)
+                \item 对突变反应滞后
             \end{itemize}
         \end{block}
 
@@ -38,7 +38,7 @@
         \begin{block}{信任观测 ($\bm{Q}$ 大, $\bm{R}$ 小)}
             \begin{itemize}
                 \item 紧跟观测值变化
-                \item 引入较多噪声 (Noise)
+                \item 引入较多噪声
             \end{itemize}
         \end{block}
     \end{columns}
@@ -53,8 +53,8 @@
 
     \textbf{案例：无人机姿态解算}
     \begin{itemize}
-        \item \textbf{陀螺仪 (Gyro)}：短时精度高，长时有积分漂移。
-        \item \textbf{加速度计 (Accel)}：静态精度高，动态噪声大。
+        \item \textbf{陀螺仪}：短时精度高，长时有积分漂移。
+        \item \textbf{加速度计}：静态精度高，动态噪声大。
         \item \textbf{融合方案}：利用 Kalman Filter 融合两者数据。
               \begin{equation*}
                   \text{Optimal Angle} = K \cdot \text{Accel} + (1-K) \cdot \text{Gyro}

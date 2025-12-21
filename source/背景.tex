@@ -2,40 +2,103 @@
 \section{背景引入}
 %================================================================
 
+% --- 第一页：直观痛点（增加代入感） ---
 \begin{frame}
-	\frametitle{现实世界的困境：不确定性}
+	\frametitle{直觉挑战：蒙眼走路的困境}
+
 	\begin{columns}
 		\column{0.6\textwidth}
-		在信息工程与控制领域，我们面临两个永恒的问题：
+		想象你被蒙住双眼，试图沿着直线走 100 米：
 		\begin{itemize}
-			\item \textbf{不准确的模型 (Process Noise)}：
-			      \begin{itemize}
-				      \item 摩擦力、风阻难以完美建模
-				      \item 积分误差随时间累积（Dead Reckoning Drifting）
-			      \end{itemize}
-			\item \textbf{不准确的观测 (Measurement Noise)}：
-			\item GPS 信号多径效应
-			\item 传感器热噪声
+			\item \textbf{来源 A (心中的推算)}：
+			      你默数步数，假设每步 0.75 米。
+			      \newline $\rightarrow$ \alert{困境}：步长其实不均匀，不知不觉就走歪了。
+			      \vspace{0.3cm}
+			\item \textbf{来源 B (外界的感知)}：
+			      朋友在终点喊你，或者你偶尔伸手摸到了墙。
+			      \newline $\rightarrow$ \alert{困境}：声音有回声，墙面凹凸不平，定位并不精准。
 		\end{itemize}
 
 		\column{0.4\textwidth}
-		\begin{block}{核心问题}
-			当我们既不能完全相信\textbf{推算}，也不能完全相信\textbf{观测}时，如何获知系统的\textbf{真实状态}？
+		\begin{alertblock}{大脑的纠结}
+			大脑此刻疯狂思考：
+			\begin{itemize}
+				\item \textbf{推算}说：“按步数，我已经到了！”
+				      \newline \small{(盲目自信，误差随时间发散)}
+				      \vspace{0.1cm}
+				\item \textbf{感知}说：“听声音，好像还没到？”
+				      \newline \small{(充满噪声，容易受干扰)}
+			\end{itemize}
+		\end{alertblock}
+		\centering
+		\vspace{0.2cm}
+		\textbf{如何走出最直的线？}
+	\end{columns}
+\end{frame}
+
+% --- 第二页：历史背景与提出者（阿波罗时刻） ---
+\begin{frame}
+	\frametitle{历史的转折}
+
+	\begin{columns}
+		\column{0.55\textwidth}
+		\textbf{背景危机}：
+		\begin{itemize}
+			\item 阿波罗飞船必须以极高精度切入月球轨道。
+			\item 机载计算机算力极低（仅2KB RAM），存不下传统方法所需的历史数据。
+		\end{itemize}
+
+		\vspace{0.3cm}
+		\textbf{卡尔曼滤波的提出}：
+		\begin{itemize}
+			\item \textbf{Rudolf E. Kalman} 访问 NASA Ames 中心。
+			\item \textbf{1960年发表论文}：
+			      \newline \textit{\small "A New Approach to Linear Filtering and Prediction Problems"}
+			\item \textbf{核心突破}：“只看现在，忘掉过去”，完美适配低算力环境。
+		\end{itemize}
+
+		\column{0.45\textwidth}
+		% --- 图片区域 ---
+		\begin{figure}
+			\centering
+			% 建议找一张卡尔曼的黑白肖像照
+			\includegraphics[width=0.45\linewidth]{figures/kalman-portrait.png}
+			% \includegraphics[width=0.45\linewidth]{example-image-a} % 占位符A，请替换
+			\hfill
+			% 建议找一张阿波罗登月舱或宇航员的照片
+			% \includegraphics[width=0.45\linewidth]{apollo_moon.jpg}
+			\includegraphics[width=0.45\linewidth]{figures/apollo.jpg} % 占位符B，请替换
+			\caption{\scriptsize 左：R.E. Kalman | 右：阿波罗登月}
+		\end{figure}
+
+		\vspace{-0.2cm}
+
+		\begin{block}{历史里程碑}
+			卡尔曼滤波成为了阿波罗导航计算机的灵魂，不仅把人送上了月球，也把他们带了回来。
 		\end{block}
 	\end{columns}
 \end{frame}
 
+% --- 第三页：学科定义与影响（拔高） ---
 \begin{frame}
-	\frametitle{卡尔曼滤波 (Kalman Filter) 的诞生}
+	\frametitle{从控制到信息：卡尔曼滤波的本质}
+
 	\begin{itemize}
-		\item \textbf{提出者}：Rudolf E. Kalman (1960)
-		\item \textbf{核心论文}：\textit{A New Approach to Linear Filtering and Prediction Problems}
-		\item \textbf{本质}：
+		\item \textbf{它不是传统意义上的“滤波器”}：
 		      \begin{itemize}
-			      \item 并不是为了滤除某些频率（不同于低通/高通滤波器）。
-			      \item 是一种\textbf{最优递归估计算法} (Optimal Recursive Estimator)。
-			      \item 在最小均方误差 (MMSE) 准则下，对系统状态进行最优估计。
+			      \item 它不只是滤除高频杂波，它是一个 \textbf{最优状态估计器}。
 		      \end{itemize}
-		\item \textbf{应用场景}：阿波罗登月导航、雷达目标追踪、导弹制导、股市预测。
+
+		\item \textbf{对信息工程的深远影响}：
+		      \begin{enumerate}
+			      \item \textbf{打破壁垒}：完美融合了控制理论中的状态空间模型与统计信号处理中的（贝叶斯估计）。
+			      \item \textbf{定义标准}：确立了“预测 + 更新”的标准范式。
+			      \item \textbf{无处不在}：
+			            \begin{itemize}
+				            \item \small{手机定位 (GPS + 加速度计融合)}
+				            \item \small{大疆无人机悬停 (IMU + 视觉融合)}
+				            \item \small{ChatGPT (Transformer 中的位置编码逻辑与序列预测思想亦有相通之处)}
+			            \end{itemize}
+		      \end{enumerate}
 	\end{itemize}
 \end{frame}

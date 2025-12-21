@@ -5,25 +5,25 @@
 \begin{frame}
     \frametitle{1. 线性系统的局限性}
     \begin{alertblock}{标准 KF 的致命弱点}
-        标准卡尔曼滤波假设系统是\textbf{线性 (Linear)} 的：
+        标准卡尔曼滤波假设系统是\textbf{线性} 的：
         $$ \bm{x}_k = \bm{F}\bm{x}_{k-1} \quad \text{和} \quad \bm{z}_k = \bm{H}\bm{x}_k $$
     \end{alertblock}
 
     \textbf{然而，现实世界充满了非线性：}
     \begin{itemize}
-        \item \textbf{机器人运动}：$x_{new} = x_{old} + v \cdot \cos(\theta) \cdot \Delta t$ （包含三角函数）
-        \item \textbf{雷达观测}：$r = \sqrt{x^2 + y^2}$ （包含平方根）
+        \item \textbf{机器人运动}：$x_{new} = x_{old} + v \cdot \cos(\theta) \cdot \Delta t$
+        \item \textbf{雷达观测}：$r = \sqrt{x^2 + y^2}$
     \end{itemize}
 
     \vspace{0.2cm}
-    \textbf{问题：} 高斯分布经过非线性变换后，\textbf{不再是高斯分布}（形状会扭曲），导致标准 KF 的公式失效。
+    \textbf{问题：} 高斯分布经过非线性变换后，\textbf{不再是高斯分布}，导致标准 KF 的公式失效。
 \end{frame}
 
 \begin{frame}
-    \frametitle{2. 解决思路：线性化 (Linearization)}
+    \frametitle{2. 解决思路：线性化}
     既然非线性太难处理，我们能不能在\textbf{局部}把它看作线性的？
 
-    \begin{block}{泰勒级数展开 (Taylor Series Expansion)}
+    \begin{block}{泰勒级数展开}
         对于非线性函数 $f(x)$，我们在估计点 $\hat{x}$ 附近做一阶展开：
         \begin{equation}
             f(x) \approx f(\hat{x}) + \underbrace{\frac{\partial f}{\partial x}\bigg|_{x=\hat{x}}}_{\text{切线斜率}} \cdot (x - \hat{x})
@@ -37,7 +37,7 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{3. 核心工具：雅可比矩阵 (Jacobian Matrix)}
+    \frametitle{3. 核心工具：雅可比矩阵}
     在多维系统中，导数变成了\textbf{雅可比矩阵}。它是 EKF 的核心。
 
     假设状态转移函数为 $\bm{x}_k = f(\bm{x}_{k-1}, \bm{u}_k)$，则雅可比矩阵 $\bm{F}_k$ 为：
@@ -127,14 +127,14 @@
 \begin{frame}
     \frametitle{7. EKF 的优缺点分析}
 
-    \begin{block}{优点 (Why use it?)}
+    \begin{block}{优点}
         \begin{itemize}
             \item \textbf{事实标准}：目前导航系统（GPS/IMU 融合）、机器人定位 (SLAM) 的首选基础算法。
             \item \textbf{计算量适中}：比粒子滤波 (Particle Filter) 快得多。
         \end{itemize}
     \end{block}
 
-    \begin{alertblock}{缺点 (Watch out!)}
+    \begin{alertblock}{缺点}
         \begin{itemize}
             \item \textbf{发散风险}：如果线性化点选得不好（初始估计太差），泰勒展开误差会很大，导致滤波器发散。
             \item \textbf{繁琐的雅可比}：对于复杂的系统，手算雅可比矩阵非常痛苦且容易出错。
@@ -152,7 +152,7 @@
         \begin{itemize}
             \item 不去线性化函数（不算雅可比）。
             \item 而是\textbf{近似概率分布}。
-            \item 选取几个关键点（Sigma Points），把它们扔进非线性函数里算一算，然后再算出新的均值和方差。
+            \item 选取几个关键点，把它们扔进非线性函数里算一算，然后再算出新的均值和方差。
         \end{itemize}
 
         \column{0.4\textwidth}
