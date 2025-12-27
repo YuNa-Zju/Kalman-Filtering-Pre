@@ -16,20 +16,22 @@
 \zjusectioncolor{blue} % 顶部栏右上角的颜色，blue/black
 \catcode`\。=\active
 \newcommand{。}{．}
+\setbeamertemplate{navigation symbols}{}
 \usepackage[backend=biber, style=ieee, autocite=footnote, citestyle=authortitle]{biblatex}
 \addbibresource{references.bib}
 % 首页信息设置
 \title[卡尔曼滤波算法]{从推算到最优估计：卡尔曼滤波}
 \subtitle{——信息工程中的数学建模与应用}
 
-\author[您的姓名]{
-  您的姓名 \\ \medskip
-  {\small \url{your.email@university.edu.cn}} \\
-  {\small 信息与电子工程学院}}
+\author[数学建模第七组]{
+  何铭源 \quad 郑一鸣 \quad 俞晨煜 \\ \medskip  % 第一行3人，\quad表示空格
+  何欣艺 \quad 任子桐                          % 第二行2人
+}
 
-\institute[University]{
-  信息工程专业 \\
-  数学建模课程小组}
+\institute[数学建模课程]{
+  数学建模课程 \\
+  第七组
+}
 
 \date[\today]{
   \today}
