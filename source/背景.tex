@@ -3,39 +3,125 @@
 %================================================================
 
 % --- 第一页：直观痛点（增加代入感） ---
+% \begin{frame}
+% 	\frametitle{直觉挑战：蒙眼走路的困境}
+
+% 	\begin{columns}
+% 		\column{0.6\textwidth}
+% 		想象你被蒙住双眼，试图沿着直线走 100 米：
+% 		\begin{itemize}
+% 			\item \textbf{来源 A (心中的推算)}：
+% 			      你默数步数，假设每步 0.75 米。
+% 			      \newline $\rightarrow$ \alert{困境}：步长其实不均匀，不知不觉就走歪了。
+% 			      \vspace{0.3cm}
+% 			\item \textbf{来源 B (外界的感知)}：
+% 			      朋友在终点喊你，或者你偶尔伸手摸到了墙。
+% 			      \newline $\rightarrow$ \alert{困境}：声音有回声，墙面凹凸不平，定位并不精准。
+% 		\end{itemize}
+
+% 		\column{0.4\textwidth}
+% 		\begin{alertblock}{大脑的纠结}
+% 			大脑此刻疯狂思考：
+% 			\begin{itemize}
+% 				\item \textbf{推算}说：“按步数，我已经到了！”
+% 				      \newline \small{(盲目自信，误差随时间发散)}
+% 				      \vspace{0.1cm}
+% 				\item \textbf{感知}说：“听声音，好像还没到？”
+% 				      \newline \small{(充满噪声，容易受干扰)}
+% 			\end{itemize}
+% 		\end{alertblock}
+% 		\centering
+% 		\vspace{0.2cm}
+% 		\textbf{如何走出最直的线？}
+% 	\end{columns}
+% \end{frame}
+
+\begin{frame}{信号估计问题}
+    \begin{itemize}
+        \item 问题：如何从包含噪声的观测序列中实时获知系统状态？
+        \item 例子：雷达系统、导航、语音信号增强、心电图去噪、信道状态估计等。
+        \item 如何获知系统的状态？
+        \begin{itemize}
+            \item 理论计算：
+			\begin{itemize}
+				\item 用动力学等方式对系统进行建模，获知系统的状态方程，根据上一时刻的状态获知这一时刻的状态。例如，用牛顿力学对小车进行建模，获取其坐标、速度、加速度的关系。
+				\item 然而，理论模型不总是理想的，存在模型无法完全涵盖的噪声，无法彻底消除。
+			\end{itemize}
+            \item 外部观测：
+			\begin{itemize}
+				\item 用各种传感器进行探测，进而获知系统状态。例如，通过小车车轮电机的传感器获知转速，通过雷达获知小车的位置。
+				\item 但是，传感器测量也存在一定误差，无法彻底消除。
+			\end{itemize}
+		\end{itemize}
+		\item 如果不处理这些噪声，计算值和观测值将直接用于识别和控制，可能造成判断失误和控制失稳。对于导航等不少对信号累积处理的系统中，误差将随时间累积，最终可能严重偏离实际情况。
+        % \item 技术演进动力：如何在有限的算力资源下，实现对非平稳系统状态的最优逼近。
+    \end{itemize}
+\end{frame}
+
 \begin{frame}
-	\frametitle{直觉挑战：蒙眼走路的困境}
+	\frametitle{直观的例子：蒙眼走直线的挑战}
 
 	\begin{columns}
 		\column{0.6\textwidth}
 		想象你被蒙住双眼，试图沿着直线走 100 米：
 		\begin{itemize}
-			\item \textbf{来源 A (心中的推算)}：
-			      你默数步数，假设每步 0.75 米。
-			      \newline $\rightarrow$ \alert{困境}：步长其实不均匀，不知不觉就走歪了。
+			\item \textbf{内部推算}：
+			      你根据步数和步长估计自己位置。
+			      \newline $\rightarrow$ \alert{问题}：步长有波动，步数累积的误差最终会使我们偏离直线。
 			      \vspace{0.3cm}
-			\item \textbf{来源 B (外界的感知)}：
-			      朋友在终点喊你，或者你偶尔伸手摸到了墙。
-			      \newline $\rightarrow$ \alert{困境}：声音有回声，墙面凹凸不平，定位并不精准。
+			\item \textbf{外部观测}：
+			      偶尔通过触碰地面标记、手杖探测前方距离，或听脚步声回响判断位置。
+			      \newline $\rightarrow$ \alert{问题}：感知存在噪声或延迟，不完全可靠。
 		\end{itemize}
 
 		\column{0.4\textwidth}
-		\begin{alertblock}{大脑的纠结}
-			大脑此刻疯狂思考：
+		\begin{alertblock}{大脑的权衡}
+			大脑如何判断当前位置？
 			\begin{itemize}
-				\item \textbf{推算}说：“按步数，我已经到了！”
-				      \newline \small{(盲目自信，误差随时间发散)}
-				      \vspace{0.1cm}
-				\item \textbf{感知}说：“听声音，好像还没到？”
-				      \newline \small{(充满噪声，容易受干扰)}
+				\item 内部推算提供连续更新，但误差会累积。
+				\item 外部观测提供修正，但测量不精确。
 			\end{itemize}
+			\vspace{0.1cm}
+			\textbf{结合两者，获得最可靠的位置信息。}
 		\end{alertblock}
-		\centering
-		\vspace{0.2cm}
-		\textbf{如何走出最直的线？}
 	\end{columns}
 \end{frame}
 
+\begin{frame}{最小二乘法}
+    \begin{itemize}
+        \item 历史起源：1809年高斯用于预测谷神星轨道。
+        \item 数学模型：
+			设观测值$y \in \mathbb{R}^m$与真实值$x \in \mathbb{R}^n$线性相关，$n < m$，$x$满足$y = H x + v$，其中$H$为由建模得知的测量矩阵，$v$为噪声。求解$\arg_x \min \left|\left|y - H x\right|\right|^2$，得到$\hat{x} = \left(H^T H\right)^{-1}H^T y$
+        \item 劣势：
+        \begin{itemize}
+            \item 没有充分考虑系统时变的特点，不能很好地利用已有数据；
+            \item 如果只观测一次，某些次观测的异常值可能对系统造成影响；如果观测多次，系统状态在这一时段已经发生了变化。
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{维纳滤波}
+    \begin{itemize}
+        \item 历史贡献：1940年代由诺伯特·维纳提出，将滤波问题引入随机过程的统计范畴。
+        \item 核心内容：利用信号与噪声的功率谱密度，在频域内设计传递函数。
+        \item 劣势：
+        \begin{itemize}
+            \item 同样，无法适应时变系统和动态信号。
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{卡尔曼的构想}
+    \begin{itemize}
+        \item \textbf{理论背景}：1960年，Rudolf Kalman 发表论文《A New Approach to Linear Filtering and Prediction Problems》，引入了状态空间分析法。
+        \item \textbf{核心思想}：
+        \begin{itemize}
+            \item 放弃维纳滤波的频域思想，转而使用线性差分方程描述系统演进。
+            \item 将预测值和观察值结合起来，估计真实值。
+        \end{itemize}
+        \item \textbf{早期困境}：由于其数学表达（矩阵运算与递归逻辑）过于超前，当时主流的信号处理学界对此反应冷淡，认为其缺乏工程实用性。
+    \end{itemize}
+\end{frame}
 % --- 第二页：历史背景与提出者（阿波罗时刻） ---
 \begin{frame}
 	\frametitle{历史的转折}
@@ -44,18 +130,20 @@
 		\column{0.55\textwidth}
 		\textbf{背景危机}：
 		\begin{itemize}
-			\item 阿波罗飞船必须以极高精度切入月球轨道。
+			\item 阿波罗飞船必须以极高精度切入月球轨道。NASA 正在寻求寻求地月转移轨道的实时精确定位算法。
 			\item 机载计算机算力极低（仅2KB RAM），存不下传统方法所需的历史数据。
+			\item Kalman 在 NASA 艾姆斯研究中心展示其理论时，遇到了负责阿波罗导航系统的 Stanley Schmidt。
+			\item Schmidt意识到该算法的递归特性可以解决航天器导航中巨大的计算负载问题。并将其引入阿波罗系统。
 		\end{itemize}
 
-		\vspace{0.3cm}
-		\textbf{卡尔曼滤波的提出}：
-		\begin{itemize}
-			\item \textbf{Rudolf E. Kalman} 访问 NASA Ames 中心。
-			\item \textbf{1960年发表论文}：
-			      \newline \textit{\small "A New Approach to Linear Filtering and Prediction Problems"}
-			\item \textbf{核心突破}：“只看现在，忘掉过去”，完美适配低算力环境。
-		\end{itemize}
+		% \vspace{0.3cm}
+		% \textbf{卡尔曼滤波的提出}：
+		% \begin{itemize}
+		% 	\item \textbf{Rudolf E. Kalman} 访问 NASA Ames 中心。
+		% 	\item \textbf{1960年发表论文}：
+		% 	      \newline \textit{\small "A New Approach to Linear Filtering and Prediction Problems"}
+		% 	\item \textbf{核心突破}：“只看现在，忘掉过去”，完美适配低算力环境。
+		% \end{itemize}
 
 		\column{0.45\textwidth}
 		% --- 图片区域 ---
@@ -81,23 +169,23 @@
 
 % --- 第三页：学科定义与影响（拔高） ---
 \begin{frame}
-	\frametitle{从控制到信息：卡尔曼滤波的本质}
-
+	\frametitle{卡尔曼滤波的insight}
 	\begin{itemize}
-		\item \textbf{它不是传统意义上的“滤波器”}：
+		\item \textbf{最优状态估计器}：
 		      \begin{itemize}
-			      \item 它不只是滤除高频杂波，它是一个 \textbf{最优状态估计器}。
+			      \item 它不仅是传统意义上滤去噪声的滤波器；
+			      \item 在动态系统中，还能根据噪声统计信息递推地估计系统状态。
 		      \end{itemize}
 
-		\item \textbf{对信息工程的深远影响}：
+		\item \textbf{对信息与控制的影响}：
 		      \begin{enumerate}
-			      \item \textbf{打破壁垒}：完美融合了控制理论中的状态空间模型与统计信号处理中的（贝叶斯估计）。
-			      \item \textbf{定义标准}：确立了“预测 + 更新”的标准范式。
+			      \item \textbf{融合理论}：将控制理论中的状态空间模型与统计信号处理（贝叶斯估计）结合。
+			      \item \textbf{预测-更新范式}：形成了递推估计的标准框架。
 			      \item \textbf{无处不在}：
 			            \begin{itemize}
-				            \item \small{手机定位 (GPS + 加速度计融合)}
-				            \item \small{大疆无人机悬停 (IMU + 视觉融合)}
-				            \item \small{ChatGPT (Transformer 中的位置编码逻辑与序列预测思想亦有相通之处)}
+				            \item 手机定位 (GPS + 加速度计融合)
+				            \item 无人机导航与悬停 (IMU + 视觉融合)
+				            \item 导航、雷达跟踪、传感器融合等各类动态系统
 			            \end{itemize}
 		      \end{enumerate}
 	\end{itemize}

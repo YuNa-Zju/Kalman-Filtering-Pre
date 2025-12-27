@@ -1,9 +1,40 @@
 %================================================================
 \section{数学模型构建}
 %================================================================
+\begin{frame}
+\frametitle{用向量描述系统状态}
+
+\begin{itemize}
+    \item 在同一时刻，系统通常需要多个物理量共同刻画，这些量彼此相关、共同变化。
+
+    \vspace{0.25cm}
+    \item 一个自然的做法是：将它们组合为一个向量（如 [位置, 速度]$^T$）
+    \[
+        \bm{x}_k =
+        \begin{bmatrix}
+            x_k^{(1)} & x_k^{(2)} & \cdots & x_k^{(n)}
+        \end{bmatrix}^\mathsf{T}
+    \]
+
+    \vspace{0.25cm}
+    \item 这种表示的优势：
+          \begin{itemize}
+              \item 在一个对象中同时保留多个物理量
+              \item 物理量之间的\textbf{线性关系}可由线性映射刻画
+              \item 便于统一描述随时间变化的整体状态
+          \end{itemize}
+    \item 与系统状态类似地，还可以用向量表示观测值、噪声、传入系统的控制量；用矩阵表示由观测值到系统状态的换算。
+\end{itemize}
+
+\vspace{0.25cm}
+\centering
+\textbf{后续方程只涉及对向量、矩阵的变化描述}
+\end{frame}
+
+
 
 \begin{frame}
-    \frametitle{1. 状态方程：系统的物理演化}
+    \frametitle{1. 状态方程：系统的物理特性}
     % 说明：这是建立在上一时刻基础上的“先验估计”
     \begin{equation}
         \bm{x}_k = \underbrace{\bm{F} \bm{x}_{k-1}}_{\text{状态转移}} + \underbrace{\bm{B} \bm{u}_k}_{\text{控制输入}} + \underbrace{\bm{w}_k}_{\text{过程噪声}}
@@ -29,7 +60,7 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{2. 观测方程：从状态到读数}
+    \frametitle{2. 观测方程：传感器的特性}
     % 说明：这是建立在传感器读数基础上的描述
     \begin{equation}
         \bm{z}_k = \underbrace{\bm{H} \bm{x}_k}_{\text{观测映射}} + \underbrace{\bm{v}_k}_{\text{测量噪声}}
@@ -39,11 +70,13 @@
 
     \begin{itemize}
         \setlength{\itemsep}{12pt}
+        \item \textbf{观测向量$z_k$}
+              \newline $k$时刻所有传感器读数按一定顺序排列的列向量。
         \item \textbf{观测映射项 $\bm{H}\bm{x}_k$}
               \newline
-              连接“内部状态”与“外部读数”的桥梁。系统状态 $\bm{x}_k$ 可能包含位置和速度等多个维度，而传感器 $\bm{z}_k$ 可能只能观测到位置。
+              描述系统状态通过何种映射得到传感器读数。
               \newline
-              例如：$\bm{H} = [1, 0]$ 可将二维状态向量投影为一维观测值。
+              例如：$\bm{H} = [1, 0]$ 可将二维状态向量投影为一维观测值。在$\bm{x}_k = [\text{位移},\text{速度}]^T$的情形下，这样的$\bm{H}$对应了一个位置传感器。
 
         \item \textbf{测量噪声 $\bm{v}_k$}
               \newline
@@ -53,7 +86,7 @@
 
 \begin{frame}
     \frametitle{符号定义与噪声假设}
-
+    状态量的维数：$n$；观测量的维数：$m$；控制量的维数：$l$。
     \begin{table}
         \centering
         \renewcommand{\arraystretch}{1.3} % 增加表格行高
@@ -61,10 +94,10 @@
             \toprule
             符号         & 物理含义                       & 维度           \\
             \midrule
-            $\bm{x}_k$ & $k$时刻的状态向量（如 [位置, 速度]$^T$） & $n \times 1$ \\
+            $\bm{x}_k$ & $k$时刻的状态向量 & $n \times 1$ \\
             $\bm{F}$   & 状态转移矩阵                     & $n \times n$ \\
             $\bm{B}$   & 控制输入矩阵                     & $n \times l$ \\
-            $\bm{z}_k$ & $k$时刻的观测向量（传感器读数）          & $m \times 1$ \\
+            $\bm{z}_k$ & $k$时刻的观测向量          & $m \times 1$ \\
             $\bm{H}$   & 观测矩阵                       & $m \times n$ \\
             \bottomrule
         \end{tabular}
@@ -72,7 +105,7 @@
 
     \vspace{0.4cm}
 
-    卡尔曼滤波的核心假设是系统受到\textbf{高斯白噪声}的影响：
+    假设过程噪声和测量噪声都服从均值为$0$的正态分布。
     $$
         \bm{w}_k \sim N(0, \bm{Q}), \quad \bm{v}_k \sim N(0, \bm{R})
     $$
