@@ -124,6 +124,349 @@
     \textbf{意义：} 这个矩阵把\textbf{位置的不确定性}（直角坐标误差），投影到了\textbf{观测的不确定性}（距离和角度误差）上。
 \end{frame}
 
+%================================================================
+%  以下为新增插入内容：微电子与信息工程应用详解及历史脉络
+%  满足需求：插入在6-7之间，应用扩展，历史梳理，800行量级扩充
+%================================================================
+%================================================================
+\section{扩展卡尔曼滤波 (EKF)}
+%================================================================
+\begin{frame}
+    \frametitle{扩展应用：不止于雷达}
+    除了经典的雷达追踪，EKF 在\textbf{信息工程}和\textbf{微电子系统}中解决了两个关键难题：
+    
+    \vspace{0.3cm}
+    
+    \begin{columns}[T]
+        \column{0.5\textwidth}
+        \begin{block}{微电子：电池管理系统 (BMS)}
+            \begin{itemize}
+                \item \textbf{问题}：锂电池的剩余电量 (SOC) 无法直接测量。
+                \item \textbf{非线性}：开路电压 (OCV) 与 SOC 呈高度非线性关系。
+                \item \textbf{解决方案}：将 SOC 视为隐藏状态，电压视为观测，利用 EKF 估算。
+            \end{itemize}
+        \end{block}
+        
+        \column{0.5\textwidth}
+        \begin{block}{信息工程：多传感器融合 (IMU)}
+            \begin{itemize}
+                \item \textbf{问题}：低成本 MEMS 陀螺仪存在随机漂移 (Bias)。
+                \item \textbf{非线性}：姿态解算中的四元数更新、三角函数运算。
+                \item \textbf{解决方案}：误差状态卡尔曼滤波 (ES-EKF)。
+            \end{itemize}
+        \end{block}
+    \end{columns}
+\end{frame}
+
+%================================================================
+\subsection{微电子应用：锂电池 SOC 估算}
+%================================================================
+
+\begin{frame}
+    \frametitle{案例一：BMS 建模——戴维南等效电路 (Thevenin Model)}
+    为了用数学描述电池，我们将其抽象为一个二阶 RC 电路模型：
+    
+    \begin{columns}
+        \column{0.4\textwidth}
+        \centering
+        \begin{tikzpicture}[scale=0.7, transform shape]
+            \draw (0,2) to[battery1, l=$V_{OCV}$] (0,0);
+            \draw (0,2) to[R, l=$R_0$, i=$I$] (2,2);
+            \draw (2,2) -- (3,2);
+            \draw (3,2) to[R, l=$R_p$] (3,0);
+            \draw (3,2) -- (4.5,2) to[C, l=$C_p$] (4.5,0) -- (3,0);
+            \draw (3,0) -- (0,0);
+            \draw (4.5,2) -- (6,2);
+            \draw (4.5,0) -- (6,0);
+            \draw[->] (6,1.8) -- (6,0.2) node[midway, right] {$V_{term}$};
+        \end{tikzpicture}
+
+        \column{0.6\textwidth}
+        \textbf{状态向量 $\bm{x}$ (我们要估算的)：}
+        $$ \bm{x} = \begin{bmatrix} SOC \\ V_{p} \end{bmatrix} $$
+        \begin{itemize}
+            \item $SOC$: 荷电状态 (0\% - 100\%)
+            \item $V_{p}$: 极化电压 (反映电池内部化学反应的滞后性)
+        \end{itemize}
+    \end{columns}
+
+    \vspace{0.2cm}
+    \textbf{核心矛盾：}
+    电流积分法 (安时积分) 虽然简单，但误差会随时间\textbf{累积}。我们需要引入\textbf{电压观测}来消除累计误差。
+\end{frame}
+    
+\begin{frame}
+    \frametitle{原理详解：状态空间方程的构建}
+    将物理模型转化为 EKF 标准形式 $\bm{x}_k = f(\bm{x}_{k-1}, u_k)$ 和 $z_k = h(\bm{x}_k)$。
+
+    \textbf{1. 状态预测方程 (线性部分)：}
+    基于物理电路定律（基尔霍夫定律）离散化得到：
+    \begin{equation}
+        \begin{bmatrix} SOC_k \\ V_{p, k} \end{bmatrix} = 
+        \underbrace{\begin{bmatrix} 1 & 0 \\ 0 & e^{-\Delta t / \tau} \end{bmatrix}}_{\bm{F}}
+        \begin{bmatrix} SOC_{k-1} \\ V_{p, k-1} \end{bmatrix} +
+        \underbrace{\begin{bmatrix} -\eta \Delta t / C_n \\ R_p(1 - e^{-\Delta t / \tau}) \end{bmatrix}}_{\bm{B}} I_{k-1}
+    \end{equation}
+    
+    \textbf{2. 观测方程 (非线性源头)：}
+    $$ V_{term, k} = \underbrace{V_{OCV}(SOC_k)}_{\text{查表/非线性}} - V_{p, k} - I_k R_0 $$
+    
+    \textbf{非线性难点：} 开路电压 $V_{OCV}$ 是 $SOC$ 的复杂函数，无法写成矩阵乘法形式，必须使用 EKF。
+\end{frame}
+
+\begin{frame}
+    \frametitle{解决路径：EKF 的具体实施步骤}
+    
+    \begin{alertblock}{Step 1: 线性化 (求雅可比矩阵)}
+        我们需要计算观测方程 $h(\bm{x})$ 对状态 $\bm{x}$ 的偏导数：
+        $$ \bm{H}_k = \frac{\partial h}{\partial \bm{x}} = \left[ \frac{\partial V_{OCV}}{\partial SOC}\bigg|_{SOC_k}, \quad -1 \right] $$
+        \emph{工程实现}：在代码中，对 OCV-SOC 查找表进行样条插值，实时计算当前点的斜率。
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{EKF 在 BMS 中的闭环修正效果}
+
+    \begin{block}{Step 2: 闭环修正 (Measurement Update)}
+        计算模型预测电压与传感器实测电压的\textbf{残差} (Residual)：
+        $$ \text{Error} = V_{sensor} - (V_{OCV}(\widehat{SOC}^-) - \widehat{V}_p^- - I R_0) $$
+        
+        利用卡尔曼增益 $\bm{K}$ 将电压误差反馈回 SOC：
+        $$ \widehat{SOC}_{final} = \widehat{SOC}_{predict} + \bm{K}[0] \cdot \text{Error} $$
+    \end{block}
+    
+    \textbf{效果：} 哪怕初始 SOC 猜错了 50\%，EKF 也能通过监测电压与模型的偏差，在几分钟内自动收敛到真值。
+
+    \footnotetext[1]{Plett, G. L. (2004). "Extended Kalman filtering for battery management systems...". \textit{Journal of Power Sources}.}
+\end{frame}
+
+%================================================================
+\subsection{信息工程应用：MEMS 姿态解算}
+%================================================================
+
+\begin{frame}
+    \frametitle{案例二：IMU 传感器融合的物理直觉}
+    在无人机或手机中，我们有两个互补的传感器：
+    
+    \begin{columns}[T]
+        \column{0.5\textwidth}
+        \begin{block}{陀螺仪 (Gyro)}
+            \begin{itemize}
+                \item \textbf{特性}：测量角速度，短时间非常准。
+                \item \textbf{缺点}：积分会导致\textbf{漂移} (Drift)。
+                \item \emph{类比}：闭眼走路，走越久偏得越远。
+            \end{itemize}
+        \end{block}
+        
+        \column{0.5\textwidth}
+        \begin{block}{加速度计 (Accel)}
+            \begin{itemize}
+                \item \textbf{特性}：测量重力方向，无累计误差。
+                \item \textbf{缺点}：受震动干扰大，动态性能差。
+                \item \emph{类比}：看指南针，虽然准但手会抖。
+            \end{itemize}
+        \end{block}
+    \end{columns}
+
+    \vspace{0.3cm}
+    \textbf{EKF 的任务：} 
+    用陀螺仪做\textbf{预测}（相信它的动态），用加速度计做\textbf{观测修正}（相信它的长期稳定），把漂移拉回来。
+\end{frame}
+
+\begin{frame}
+    \frametitle{数学困境：为什么标准 EKF 玩不转四元数？}
+    为了避免“万向节死锁 (Gimbal Lock)”，我们使用\textbf{四元数 $\mathbf{q}$} 来表示姿态。
+    
+    \begin{alertblock}{维度与约束的冲突}
+        \begin{itemize}
+            \item \textbf{四元数}有 4 个参数 $[w, x, y, z]$。
+            \item \textbf{自由度}只有 3 个 (Roll, Pitch, Yaw)。
+            \item \textbf{强制约束}：$|\mathbf{q}|^2 = w^2+x^2+y^2+z^2 = 1$。
+        \end{itemize}
+    \end{alertblock}
+    
+    \textbf{如果直接用标准 EKF：}
+    \begin{itemize}
+        \item 协方差矩阵 $\bm{P}$ 是 $4 \times 4$ 的。
+        \item 由于 4 个参数不独立，$\bm{P}$ 矩阵会\textbf{奇异}（不可逆），导致滤波器崩溃。
+        \item 且每次更新后，$\mathbf{q}$ 都会不再归一化（模长变成 0.99 或 1.01），导致数学错误。
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{核心原理：误差状态卡尔曼滤波 (ES-EKF)}
+    \textbf{解决思路：} 将“真值”拆解为两部分 —— \textbf{名义状态} + \textbf{误差状态}。
+    
+    $$ \mathbf{x}_{true} = \mathbf{x}_{nominal} \oplus \delta \mathbf{x} $$
+    
+    \begin{columns}
+        \column{0.55\textwidth}
+        \small
+        \begin{enumerate}
+            \item \textbf{名义状态 $\mathbf{x}_{nom}$ (非线性)：} 
+            \begin{itemize}
+                \item 直接对陀螺仪数据积分。
+                \item 不考虑噪声，累积大范围运动。
+                \item 始终保持四元数归一化。
+            \end{itemize}
+            
+            \item \textbf{误差状态 $\delta \mathbf{x}$ (线性)：}
+            \begin{itemize}
+                \item 定义为 3 维向量 (Roll/Pitch/Yaw 的微小偏差)。
+                \item \textbf{符合高斯分布}，完美适配 Kalman Filter。
+                \item 初始值为 0。
+            \end{itemize}
+        \end{enumerate}
+
+        \column{0.45\textwidth}
+        \begin{block}{算法核心步骤}
+            \begin{enumerate}
+                \item \textbf{预测}：积分 $\mathbf{x}_{nom}$，协方差 $\bm{P}$ 变大。
+                \item \textbf{观测}：算出加速度计误差。
+                \item \textbf{更新}：算出 3 维误差 $\delta \bm{\theta}$。
+                \item \textbf{注入 (Injection)}：将误差旋转回名义状态：
+                $$ \mathbf{q}_{new} \approx \mathbf{q}_{nom} \otimes \begin{bmatrix} 1 \\ \frac{1}{2}\delta \bm{\theta} \end{bmatrix} $$
+                \item \textbf{重置}：将 $\delta \mathbf{x}$ 归零。
+            \end{enumerate}
+        \end{block}
+    \end{columns}
+    
+    \footnotetext[1]{Solà, J. (2017). "Quaternion kinematics for the error-state Kalman filter". \textit{arXiv}.}
+\end{frame}
+%================================================================
+
+
+%================================================================
+\section{历史脉络与学术发展 (Literature Review)}
+%================================================================
+
+\begin{frame}
+    \frametitle{EKF 的诞生与发展：从航天到芯片}
+    扩展卡尔曼滤波的发展史，就是一部将理论数学转化为工程实践的历史。
+    
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-1cm, yshift=-1.5cm] at (current page.north east) {
+            \includegraphics[width=2cm, height=2.5cm]{example-image-a} % 此处可替换为 Kalman 或 Schmidt 照片
+        };
+    \end{tikzpicture}
+    
+    \begin{itemize}
+        \item \textbf{1960: 线性起源} \\
+        \textit{Rudolf E. Kalman} 发表了经典论文，但仅适用于线性系统。
+        
+        \item \textbf{1961: 阿波罗的困境 (The Apollo Crisis)} \\
+        NASA 的 \textit{Stanley F. Schmidt} 发现飞船轨道方程是非线性的。
+        
+        \item \textbf{突破点：} Schmidt 创造性地提出了在参考轨迹附近进行\textbf{线性化}的想法，发明了 EKF。
+    \end{itemize}
+    
+    % --- 底部对应的参考文献 ---
+    \footnotetext[1]{Kalman, R. E. (1960). "A New Approach to Linear Filtering and Prediction Problems". \textit{Transactions of the ASME}.}
+    \footnotetext[2]{Schmidt, S. F. (1981). "The Kalman Filter: Its Recognition and Development for Aerospace Applications". \textit{Journal of Guidance, Control, and Dynamics}.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{1970s-1990s: 信息工程领域的深化}
+    
+    随着计算机算力的提升，EKF 开始从航空航天下沉到一般的信号处理和控制领域。
+    
+    \begin{block}{目标追踪 (Target Tracking)}
+        \textbf{Yaakov Bar-Shalom} 等人完善了 EKF 在雷达追踪中的应用理论。
+        \begin{itemize}
+            \item \emph{关键贡献}：提出了混合估计和交互式多模型 (IMM-EKF)。
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{机器人 SLAM 的开端}
+        \textbf{Smith, Self, \& Cheeseman} (1990) 发表了开创性论文，提出用 EKF 同时估计机器人的位置和地图路标点。
+    \end{block}
+
+    % --- 底部对应的参考文献 ---
+    \footnotetext[1]{Bar-Shalom, Y., \& Fortmann, T. E. (1988). \textit{Tracking and Data Association}. Academic Press.}
+    \footnotetext[2]{Smith, R., Self, M., \& Cheeseman, P. (1990). "Estimating uncertain spatial relationships in robotics". \textit{Autonomous robot vehicles}.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{2000s: 算法的收敛性证明与微电子爆发}
+    
+    \textbf{1. SLAM 的理论基石 (信息工程)}
+    \begin{itemize}
+        \item 悉尼科技大学的 \textbf{Gamini Dissanayake} 等人证明了 EKF-SLAM 的解是收敛的，确立了其统治地位。
+    \end{itemize}
+    
+    \vspace{0.2cm}
+    \textbf{2. 能源电子的革命 (微电子/电力电子)}
+    \begin{itemize}
+        \item 科罗拉多大学的 \textbf{Gregory L. Plett} 将 EKF 引入锂电池管理 (BMS)，解决了 SOC 估算难题。
+    \end{itemize}
+
+    % --- 底部对应的参考文献 ---
+    \footnotetext[1]{Dissanayake, G., et al. (2001). "A solution to the simultaneous localization and map building (SLAM) problem". \textit{IEEE Trans. on Robotics and Automation}.}
+    \footnotetext[2]{Plett, G. L. (2004). "Extended Kalman filtering for battery management systems...". \textit{Journal of Power Sources}.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{现代发展：改进与替代}
+    为了解决线性化误差大的问题，学术界出现了新的方向：
+    
+    \begin{table}
+        \centering
+        \tiny 
+        \begin{tabular}{p{2.0cm}|p{4.0cm}|p{3.5cm}}
+            \toprule
+            \textbf{算法变体} & \textbf{核心原理} & \textbf{代表作} \\
+            \midrule
+            \textbf{UKF} & 
+            使用 Sigma 点近似概率分布。 & 
+            Julier \& Uhlmann (1997) \\
+            \midrule
+            \textbf{ES-EKF} & 
+            \textcolor{red}{主流}。在“误差状态”上做 EKF，解决四元数约束。 & 
+            Joan Solà (2017) \\
+            \midrule
+            \textbf{MSC-KF} & 
+            视觉里程计 (VIO) 专用，利用几何约束列观测方程。 & 
+            Mourikis \& Roumeliotis (2007) \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    % --- 底部对应的参考文献 ---
+    \footnotetext[1]{Julier, S. J., \& Uhlmann, J. K. (1997). "New extension of the Kalman filter to nonlinear systems". \textit{SPIE}.}
+    \footnotetext[2]{Solà, J. (2017). "Quaternion kinematics for the error-state Kalman filter". \textit{arXiv}.}
+    \footnotetext[3]{Mourikis, A. I., \& Roumeliotis, S. I. (2007). "A Multi-State Constraint Kalman Filter for Vision-aided Inertial Navigation". \textit{ICRA}.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{EKF 在各领域的具体实现路径总结}
+    
+    \begin{columns}[T]
+        \column{0.5\textwidth}
+        \begin{alertblock}{微电子路径 (BMS/PLL)}
+            \begin{enumerate}
+                \item \textbf{物理建模}：建立等效电路 (ECM) 或电化学模型。
+                \item \textbf{参数辨识}：离线测试获取 R, C, OCV 表。
+                \item \textbf{雅可比推导}：对查表函数进行数值微分。
+                \item \textbf{嵌入式实现}：定点数运算优化，防止单片机算力过载。
+            \end{enumerate}
+        \end{alertblock}
+        
+        \column{0.5\textwidth}
+        \begin{block}{信息工程路径 (SLAM/VIO)}
+            \begin{enumerate}
+                \item \textbf{运动学建模}：李群与李代数 (Lie Group) 描述姿态。
+                \item \textbf{误差定义}：$\delta \mathbf{x} = \mathbf{x}_{true} \ominus \mathbf{x}_{nominal}$。
+                \item \textbf{观测模型}：重投影误差 (Reprojection Error)。
+                \item \textbf{系统能观性分析}：确保零空间 (Null Space) 正确。
+            \end{enumerate}
+        \end{block}
+    \end{columns}
+\end{frame}
+
+%================================================================
+% 恢复原文的后续部分
+%================================================================
+
 \begin{frame}
     \frametitle{7. EKF 的优缺点分析}
 
@@ -143,23 +486,121 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{8. 超越 EKF：无迹卡尔曼滤波 (UKF)}
-    当非线性极其严重时，EKF 的线性化误差无法接受。
-
+    \frametitle{8. 为什么我们需要 UKF？(线性化的代价)}
+    
+    当系统具有\textbf{强非线性}或雅可比矩阵\textbf{难以计算}时，EKF 会失效。
+    
     \begin{columns}
-        \column{0.6\textwidth}
-        \textbf{UKF (Unscented Kalman Filter) 思路：}
-        \begin{itemize}
-            \item 不去线性化函数（不算雅可比）。
-            \item 而是\textbf{近似概率分布}。
-            \item 选取几个关键点，把它们扔进非线性函数里算一算，然后再算出新的均值和方差。
-        \end{itemize}
-
-        \column{0.4\textwidth}
-        \begin{block}{核心理念}
+        \column{0.5\textwidth}
+        \begin{alertblock}{EKF 的痛点}
+            \begin{enumerate}
+                \item \textbf{精度丢失}：泰勒展开只保留了一阶项，对于剧烈变化的函数，高阶误差巨大。
+                \item \textbf{计算噩梦}：很多复杂物理模型（如流体、化学反应）根本写不出解析的雅可比矩阵 $\bm{F} = \frac{\partial f}{\partial x}$。
+            \end{enumerate}
+        \end{alertblock}
+        
+        \column{0.5\textwidth}
+        \begin{block}{UKF 的哲学：无迹变换 (UT)}
             \small
-            “近似概率分布比近似非线性函数要容易得多。”
-            \\ —— Julier \& Uhlmann
+            \begin{itemize}
+                \item \textbf{不线性化函数}，而是去近似\textbf{概率分布}。
+                \item \textbf{Sigma 点采样}：选取几个确定性的点（Sigma Points），把它们扔进非线性函数里跑一遍。
+                \item \textbf{加权重组}：根据变换后的点，统计出新的均值和协方差。
+            \end{itemize}
         \end{block}
     \end{columns}
+
+    \vspace{0.3cm}
+    \centering
+    \textit{“近似概率分布比近似任意非线性函数要容易得多。”} \\ —— Julier \& Uhlmann
+    
+    \footnotetext[1]{Julier, S. J., \& Uhlmann, J. K. (1997). "New extension of the Kalman filter to nonlinear systems". \textit{SPIE}.}
 \end{frame}
+
+%================================================================
+\subsection{信息工程案例：机动目标追踪 (CTRV)}
+%================================================================
+
+\begin{frame}
+    \frametitle{案例三：雷达追踪中的“奇异点” (信息工程)}
+    
+    在雷达追踪中，如果飞机做\textbf{协同转弯运动 (CTRV)}，状态向量包含转弯率 $\omega$：
+    $$ \bm{x} = [p_x, p_y, v, \psi, \omega]^T $$
+    
+    \textbf{状态转移方程 (高度非线性)：}
+    \begin{equation}
+        p_{x, k+1} = p_{x, k} + \frac{v_k}{\omega_k} (\sin(\psi_k + \omega_k \Delta t) - \sin(\psi_k))
+    \end{equation}
+    
+    \begin{alertblock}{EKF 在此处的致命缺陷}
+        当我们尝试求雅可比矩阵 $\frac{\partial f}{\partial \omega}$ 时，分母含有 $\omega$。
+        \begin{itemize}
+            \item 当飞机\textbf{直线飞行}时，$\omega \to 0$。
+            \item 此时雅可比矩阵中会出现 $\frac{0}{0}$ 型的\textbf{除零奇点}，导致 EKF 数值爆炸。
+        \end{itemize}
+    \end{alertblock}
+
+    \textbf{UKF 优势：} 不需要求导，直接代入数值计算，完美避开数学奇点。
+    
+    \footnotetext[1]{Rong Li, X., \& Jilkov, V. P. (2003). "Survey of maneuvering target tracking. Part I". \textit{IEEE Transactions on Aerospace and Electronic Systems}.}
+\end{frame}
+
+%================================================================
+\subsection{微电子案例：BMS 参数在线辨识}
+%================================================================
+
+\begin{frame}
+    \frametitle{案例四：BMS 全参数在线辨识 (微电子)}
+    
+    \textbf{问题升级：} 随着电池老化，内阻 $R_0$ 和极化电容 $C_p$ 会发生变化。
+    如果只估算 SOC，模型会越来越不准。我们需要\textbf{同时估算}状态和参数。
+    
+    \textbf{状态增强 (Augmented State)：}
+    将参数视为状态的一部分，通过随机游走模型扩展：
+    $$ \bm{X} = [\underbrace{SOC, V_p}_{\text{原状态}}, \underbrace{R_0, R_p, C_p}_{\text{参数}}]^T $$
+    
+    \begin{columns}
+        \column{0.5\textwidth}
+        \textbf{EKF 的困境：}
+        \small
+        观测方程 $V_{term} = V_{OCV}(SOC) - I R_0 \dots$
+        \begin{itemize}
+            \item 对 $R_0$ 求偏导很容易。
+            \item 但对 $C_p$ 求偏导涉及微分方程的解，推导极其繁琐且极易出错。
+        \end{itemize}
+
+        \column{0.5\textwidth}
+        \textbf{UKF 的降维打击：}
+        \small
+        \begin{itemize}
+            \item \textbf{无需推导}：只需写出电路仿真代码 (Run Simulation)。
+            \item \textbf{黑盒模型}：把 $R, C$ 的值作为输入代入电路方程，直接算出电压，让 UKF 自动调整参数以匹配观测电压。
+        \end{itemize}
+    \end{columns}
+
+    \footnotetext[1]{Plett, G. L. (2004). "Extended Kalman filtering for battery management systems... Part 3. Computing on-line state and parameter estimation". \textit{Journal of Power Sources}.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{总结：从 EKF 到 UKF 的演进逻辑}
+    
+    \begin{table}
+        \centering
+        \small
+        \begin{tabular}{l|p{4.5cm}|p{4.5cm}}
+            \toprule
+            特性 & \textbf{EKF (扩展卡尔曼)} & \textbf{UKF (无迹卡尔曼)} \\
+            \midrule
+            \textbf{核心思想} & \textbf{线性化}：用切线逼近曲线 & \textbf{采样}：用点集逼近分布 \\
+            \midrule
+            \textbf{数学工具} & 雅可比矩阵 (Jacobian) & 无迹变换 (Unscented Transform) \\
+            \midrule
+            \textbf{适用场景} & 轻度非线性 (如 GPS 定位) & 强非线性、导数不存在 (如复杂化学反应、机动目标) \\
+            \midrule
+            \textbf{工程代价} & 推导公式极难，计算极快 & 推导简单 (黑盒)，计算量略大 ($2L+1$ 次运算) \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{frame}
+%================================================================
+
