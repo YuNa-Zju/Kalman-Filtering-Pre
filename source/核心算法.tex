@@ -4,8 +4,8 @@
 
 % --- 总览 ---
 \begin{frame}
-    \frametitle{算法总览：递归循环}
-    卡尔曼滤波本质上是一个\textbf{“预测 (Predict) — 更新 (Update)”} 的递归过程。
+    \frametitle{算法总览}
+    卡尔曼滤波是不断预测——更新的过程。每经过一段时间观测一次，就执行一次循环。
 
     \vspace{0.8cm}
 
@@ -17,9 +17,9 @@
             \tikzstyle{line} = [draw, ->, thick]
 
             % 节点
-            \node [block] (pred) {1. 时间更新 (预测)\\ \footnotesize 基于物理模型};
-            \node [block, below of=pred] (gain) {2. 计算增益\\ \footnotesize 融合权重 $\bm{K}_k$};
-            \node [block, below of=gain] (corr) {3. 校正\\ \footnotesize 基于观测数据};
+            \node [block] (pred) {1. 先验估计 \\ \footnotesize 根据之前数据计算先验状态和协方差};
+            \node [block, below of=pred] (gain) {2. 计算增益\\ \footnotesize 计算卡尔曼增益 $\bm{K}_k$};
+            \node [block, below of=gain] (corr) {3. 观测更新\\ \footnotesize 用观测数据校正先验估计};
 
             % 连线
             \path [line] (pred) -- (gain);
@@ -28,13 +28,12 @@
             \path [line] (corr.east) -- ++(1,0) |- (pred.east);
         \end{tikzpicture}
     \end{center}
-    % 如果不想用 tikz，可以直接用简化的 itemize，但上面的图示更直观
 \end{frame}
 
 % --- 第一阶段：预测 ---
 \begin{frame}
     \frametitle{第一阶段：时间更新}
-    在获取传感器数据前，基于上一时刻的状态与物理模型进行先验估计。
+    在不涉及传感器数据的情况下，基于上一时刻的状态与物理模型进行先验估计。
 
     \vspace{0.5cm}
 
@@ -51,21 +50,22 @@
         \begin{equation}
             \bm{P}_k^- = \bm{F} \bm{P}_{k-1} \bm{F}^T + \bm{Q}
         \end{equation}
-        误差随时间传递与扩散。$\bm{Q}$ 的引入表明预测过程本身增加了系统的不确定性。
+        $\bm{P}_k^-$是真实值和预测值的先验误差协方差矩阵，$\bm{P}_k$是真实值和预测值的后验误差协方差矩阵，
+        误差随时间传递与扩散。
     \end{block}
 \end{frame}
 
 % --- 核心：卡尔曼增益 (直觉) ---
 \begin{frame}
-    \frametitle{核心机制：卡尔曼增益}
+    \frametitle{卡尔曼增益}
 
-    卡尔曼增益 $\bm{K}_k$ 是滤波器的灵魂，其本质是\textbf{最小均方误差准则下的最优加权因子}。
+    卡尔曼增益 $\bm{K}_k$ 是最小均方误差准则下的最优加权因子。
 
     \vspace{0.5cm}
     \begin{columns}
         \column{0.5\textwidth}
-        \textbf{一维标量形式直觉：}
-        若系统为标量，公式可简化为：
+        \textbf{一维形式的直觉：}
+        此时公式可简化为：
         \begin{equation*}
             K_k = \frac{P_k^-}{P_k^- + R}
         \end{equation*}
@@ -79,14 +79,53 @@
     \begin{itemize}
         \item 分子代表模型预测的误差方差。
         \item 分母代表系统总的误差方差。
-        \item $\bm{K}_k$ 动态衡量了我们应该多大程度上信任“观测值”。
+        \item $\bm{K}_k$ 动态衡量了我们应该多大程度上信任观测值。
     \end{itemize}
 \end{frame}
 
-% --- 核心：卡尔曼增益 (极限分析) ---
+
+% --- 核心：完整公式 ---
 \begin{frame}
-    \frametitle{增益调节机制分析}
-    通过分析 $\bm{K}_k$ 在极限情况下的表现，可以理解其融合逻辑：
+    \frametitle{矩阵形式的完整表达}
+    在多维系统中，我们需要处理状态空间与观测空间的维度差异。
+
+    \begin{block}{3. 计算卡尔曼增益}
+        \begin{equation}
+            \bm{K}_k = \bm{P}_k^- \bm{H}^T (\bm{H} \bm{P}_k^- \bm{H}^T + \bm{R})^{-1}
+        \end{equation}
+        项 $(\bm{H} \bm{P}_k^- \bm{H}^T + \bm{R})^{-1}$ 充当了归一化因子的角色。
+    \end{block}
+\end{frame}
+
+% --- 第二阶段：更新 ---
+\begin{frame}
+    \frametitle{第二阶段：状态更新}
+    利用计算出的增益，融合观测数据，得到最优的后验估计。
+
+    \vspace{0.3cm}
+
+    \begin{block}{4. 状态后验更新}
+        \begin{equation}
+            \hat{\bm{x}}_k = \hat{\bm{x}}_k^- + \bm{K}_k (\bm{z}_k - \bm{H} \hat{\bm{x}}_k^-)
+        \end{equation}
+        \textbf{后验估计 = 先验预测 + 增益 $\times$ 新息}。
+        \newline
+        其中 $(\bm{z}_k - \bm{H} \hat{\bm{x}}_k^-)$ 被称为新息 (Innovation)，代表观测值与预测值的偏差。
+    \end{block}
+
+    \vspace{0.3cm}
+
+    \begin{block}{5. 协方差后验更新}
+        \begin{equation}
+            \bm{P}_k = (\bm{I} - \bm{K}_k \bm{H}) \bm{P}_k^-
+        \end{equation}
+        由于引入了观测信息，系统的不确定性得以降低 ($\bm{P}_k < \bm{P}_k^-$)，为下一时刻的计算做准备。
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{极限情形下的一些直觉}
+    % 通过分析 $\bm{K}_k$ 在极限情况下的表现，可以理解其融合逻辑：
 
     \vspace{0.3cm}
 
@@ -109,43 +148,4 @@
     \vspace{0.4cm}
     \centering
     \textit{结论：卡尔曼滤波总是自动偏向于“方差更小”的一方。}
-\end{frame}
-
-% --- 核心：完整公式 ---
-\begin{frame}
-    \frametitle{矩阵形式的完整表达}
-    在多维系统中，我们需要处理状态空间与观测空间的维度差异。
-
-    \begin{block}{3. 计算卡尔曼增益}
-        \begin{equation}
-            \bm{K}_k = \bm{P}_k^- \bm{H}^T (\bm{H} \bm{P}_k^- \bm{H}^T + \bm{R})^{-1}
-        \end{equation}
-        项 $(\bm{H} \bm{P}_k^- \bm{H}^T + \bm{R})^{-1}$ 充当了归一化因子的角色。
-    \end{block}
-\end{frame}
-
-% --- 第二阶段：更新 ---
-\begin{frame}
-    \frametitle{第二阶段：校正}
-    利用计算出的增益，融合观测数据，得到最优的后验估计。
-
-    \vspace{0.3cm}
-
-    \begin{block}{4. 状态后验更新}
-        \begin{equation}
-            \hat{\bm{x}}_k = \hat{\bm{x}}_k^- + \bm{K}_k (\bm{z}_k - \bm{H} \hat{\bm{x}}_k^-)
-        \end{equation}
-        \textbf{后验估计 = 先验预测 + 增益 $\times$ 新息}。
-        \newline
-        其中 $(\bm{z}_k - \bm{H} \hat{\bm{x}}_k^-)$ 被称为新息 (Innovation)，代表观测值与预测值的偏差。
-    \end{block}
-
-    \vspace{0.3cm}
-
-    \begin{block}{5. 协方差后验更新}
-        \begin{equation}
-            \bm{P}_k = (\bm{I} - \bm{K}_k \bm{H}) \bm{P}_k^-
-        \end{equation}
-        由于引入了观测信息，系统的不确定性得以降低 ($\bm{P}_k < \bm{P}_k^-$)，为下一时刻的计算做准备。
-    \end{block}
 \end{frame}

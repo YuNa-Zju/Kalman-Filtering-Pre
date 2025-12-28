@@ -1,0 +1,187 @@
+%================================================================
+\section{一般情形证明}
+%================================================================
+\begin{frame}
+    \frametitle{回顾}
+
+    \begin{block}{状态方程和观测方程}
+        \begin{itemize}
+            \item \textbf{状态方程}：$\bm{x}_k = \bm{F}\bm{x}_{k-1} + \bm{B}\bm{u}_k + \bm{w}_k$
+            \item \textbf{观测方程}：$\bm{z}_k = \bm{H}\bm{x}_k + \bm{v}_k$
+        \end{itemize}
+        其中$\bm{w}_k \sim N(0, \bm{Q}), \quad \bm{v}_k \sim N(0, \bm{R})$。
+    \end{block}
+
+    \vspace{0.3cm}
+
+    \begin{block}{一些记号}
+        \begin{itemize}
+            \item $\bm{x}_k$：本时刻状态的真实值。
+            \item $\bm{x}_k^-$：由上一时刻状态和状态方程推出的状态先验估计值。
+            \item $\hat{\bm{x}_k}$：经某些修正后的后验估计值。
+        \end{itemize}
+    \end{block}
+
+    我们的目标：希望$\hat{\bm{x}_k}$成为$\bm{x}_k$的比较好的估计量：
+    \begin{itemize}
+        \item 无偏估计；
+        \item 均方误差尽可能小。
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{引入观测值}
+    \begin{block}{残差}
+        如果$\bm{v_k} = \bm{0}$而$\bm{x}_k = \bm{x}_k^-$，根据观测方程应有$\bm{z}_k = \bm{H}\bm{x}_k^-$。可见，残差$\bm{z}_k - \bm{H}\bm{x}_k$在某种程度上反映了观测值与先验值的差距。
+        残差越大，说明先验值越有必要修正，基于残差的某种表达式修正先验值的想法是很自然的。
+    \end{block}
+
+    \begin{block}{转移方程}
+        我们可以为残差左乘系数矩阵$\bm{K}$，再加上先验值作为修正，得到如下转移方程，也得到了修正值的表达式。接下来的工作变为求最优的$\bm{K}$，使得$\hat{\bm{x}_k}$是无偏而且均方误差最小的。
+        \begin{equation}
+            \hat{\bm{x}_k} = \bm{x}_k^- + \bm{K}\left(\bm{z}_k - \bm{H}\bm{x}_k^-\right)
+        \end{equation}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{误差}
+    \begin{block}{先验值与真实值的误差}
+        \begin{equation}
+            \bm{e}_k^- = \bm{x_k} - \bm{x_k}^-
+        \end{equation}
+    \end{block}
+    \begin{block}{修正值与真实值的误差}
+        \begin{equation}
+            \begin{aligned}
+                \bm{e}_k &= \bm{x}_k - \hat{\bm{x}_k} \\
+                &= \bm{x}_k - \bm{x}_k^- - \bm{K}\left(\bm{H}\bm{x}_k + \bm{v}_k - \bm{H}\bm{x}_k^-\right) \\
+                & = \left(\bm{I} - \bm{KH}\right)\left(\bm{x_k} - \bm{x_k}^-\right) - \bm{K}\bm{v}_k \\
+                &= \left(\bm{I} - \bm{KH}\right)\bm{e}_k^- - \bm{K}\bm{v}_k \\
+            \end{aligned}
+        \end{equation}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{矩阵中的期望与协方差}
+
+    \textbf{随机向量} $\bm{x} \in \mathbb{R}^n$：
+    \[
+        \bm{x} = \begin{bmatrix} x_1 & x_2 & \cdots & x_n \end{bmatrix}^T
+    \]
+
+    \vspace{0.2cm}
+    \textbf{期望}：
+    \[
+        \mathbb{E}[\bm{x}] = 
+        \begin{bmatrix} \mathbb{E}[x_1] & \mathbb{E}[x_2] & \cdots & \mathbb{E}[x_n] \end{bmatrix}^T
+    \]
+
+    \vspace{0.2cm}
+    \textbf{协方差矩阵}：
+    \[
+        \mathrm{Cov}(\bm{x}) = 
+        \mathbb{E}\big[(\bm{x}-\mathbb{E}[\bm{x}]) (\bm{x}-\mathbb{E}[\bm{x}])^T\big]
+    \]
+    其中$\bm{P}_{ij} = \mathrm{Cov}(x_i,x_j)$
+
+    \textbf{一些性质}：
+    \begin{itemize}
+        \item 协方差矩阵是对称的：$\mathrm{Cov}(\bm{x})^T = \mathrm{Cov}(\bm{x})$。
+        \item 若$\bm{y} = \bm{Ax+b}$，则$\mathrm{Cov}(\bm{y}) = \bm{A}\mathrm{Cov}(\bm{x})\bm{A}^T$
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{修正值的协方差}
+    修正值与真实值的误差$\bm{e}_k = \left(\bm{I} - \bm{KH}\right)\bm{e}_k^- - \bm{K}\bm{v}_k$
+    \vspace{0.3cm}
+    其协方差为：
+    \[
+    \begin{aligned}
+        \bm{P}_k &= \mathrm{Cov}(\bm{e}_k) \\
+        &= \mathrm{Cov}\big((\bm{I}-\bm{K}\bm{H}) \bm{e}_k^- - \bm{K} \bm{v}_k \big) \\
+        &= (\bm{I}-\bm{K}\bm{H}) \, \mathrm{Cov}(\bm{e}_k^-) \, (\bm{I}-\bm{K}\bm{H})^T
+           + \bm{K} \, \mathrm{Cov}(\bm{v}_k) \, \bm{K}^T \\
+        &\quad + \underbrace{\mathrm{Cov}\big((\bm{I}-\bm{K}\bm{H})\bm{e}_k^-, -\bm{K} \bm{v}_k\big)}_{0\text{（独立性假设）}}
+    \end{aligned}
+    \]
+
+    \vspace{0.2cm}
+    最终得到：
+    \[
+        \boxed{
+        \bm{P}_k = (\bm{I}-\bm{K} \bm{H}) \bm{P}_k^- (\bm{I}-\bm{K} \bm{H})^T + \bm{K} \bm{R}_k \bm{K}^T
+        }
+    \]
+
+    \vspace{0.2cm}
+    \textbf{说明}：
+    \begin{itemize}
+        \item $\bm{P}_k^- = \mathrm{Cov}(\bm{e}_k)^-$。
+        \item 使用了协方差线性性：$\mathrm{Cov}(A\bm{x}+B\bm{y}) = A\,\mathrm{Cov}(\bm{x})\,A^T + B\,\mathrm{Cov}(\bm{y})\,B^T$  
+        \item 使用了独立性假设：$\bm{e}_k^-$ 与 $\bm{v}_k$ 独立 $\Rightarrow$ 交叉项为 0
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{协方差推导：后验与先验}
+
+    \textbf{后验协方差}：
+    \[
+        \bm{P}_k = (\bm{I}-\bm{K}_k \bm{H}) \bm{P}_k^- (\bm{I}-\bm{K}_k \bm{H})^T + \bm{K}_k \bm{R} \bm{K}_k^T = (\bm{I-KH})\bm{P}_k^-
+    \]
+
+    \vspace{0.3cm}
+    \textbf{先验协方差}：
+    \[
+        \begin{aligned}
+            \bm{P}_k^- &= \mathrm{Cov}(\bm{e}_k^-) \\
+        &= \mathrm{Cov}(\bm{F}_k \bm{e}_{k-1} + \bm{w}_k) \\
+        &= \bm{F}_k \mathrm{Cov}(\bm{e}_{k-1}) \bm{F}_k^T + \mathrm{Cov}(\bm{w}_k) \\
+        &= \bm{F}_k \bm{P}_{k-1} \bm{F}_k^T + \bm{Q}_k
+        \end{aligned}
+    \]
+    运用这两个公式，即可在下一步计算时更新所需的协方差矩阵。
+
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{卡尔曼滤波伪代码}
+
+\textbf{输入：} 初始状态 $\hat{\bm{x}}_0$, 初始协方差 $\bm{P}_0$, 系统矩阵 $\bm{F}_k$, $\bm{B}_k$, $\bm{H}_k$, 控制 $\bm{u}_k$, 协方差 $\bm{Q}_k$, $\bm{R}_k$, 测量 $\bm{z}_k$
+
+\begin{enumerate}
+    \item \textbf{循环} $k = 1$ 到 $N$：
+    \begin{enumerate}
+        \item \textbf{先验状态预测}：
+        \[
+            \hat{\bm{x}}_k^- = \bm{F}_k \hat{\bm{x}}_{k-1} + \bm{B}_k \bm{u}_k
+        \]
+        \item \textbf{先验协方差预测}：
+        \[
+            \bm{P}_k^- = \bm{F}_k \bm{P}_{k-1} \bm{F}_k^T + \bm{Q}_k
+        \]
+        \item \textbf{卡尔曼增益计算}：
+        \[
+            \bm{K}_k = \bm{P}_k^- \bm{H}_k^T (\bm{H}_k \bm{P}_k^- \bm{H}_k^T + \bm{R}_k)^{-1}
+        \]
+        \item \textbf{后验状态更新}：
+        \[
+            \hat{\bm{x}}_k = \hat{\bm{x}}_k^- + \bm{K}_k (\bm{z}_k - \bm{H}_k \hat{\bm{x}}_k^-)
+        \]
+        \item \textbf{后验协方差更新}：
+        \[
+            \bm{P}_k = (\bm{I}-\bm{K}_k \bm{H}_k) \bm{P}_k^-
+        \]
+    \end{enumerate}
+    \item \textbf{输出：} \(\hat{\bm{x}}_k\), \(\bm{P}_k\) 迭代序列
+\end{enumerate}
+
+\end{frame}
+
+
+
+
+
