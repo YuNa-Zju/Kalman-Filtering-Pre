@@ -97,38 +97,156 @@
 \end{frame}
 % --- 第三部分：锂电池 SOC 估计应用 ---
 
-\begin{frame}
-    \frametitle{3. 落地应用：锂电池 SOC 状态估计}
-    \small
-    \textbf{背景：} SOC (State of Charge) 是电池管理系统的核心。估算错误会导致过充/过放，造成永久性损伤。
+% \begin{frame}
+%     \frametitle{3. 落地应用：锂电池 SOC 状态估计}
+%     \small
+%     \textbf{背景：} SOC (State of Charge) 是电池管理系统的核心。估算错误会导致过充/过放，造成永久性损伤。
 
-    \vspace{0.3cm}
+%     \vspace{0.3cm}
+%     \textbf{核心技术栈 (Tech Stack)：}
+%     \begin{columns}[t]
+%         \column{0.48\textwidth}
+%         \begin{block}{1. 非线性滤波 (NLKFs)}
+%             用于处理电池高度非线性的电压特性：
+%             \begin{itemize}
+%                 \item \textbf{EKF / AEKF} (自适应扩展卡尔曼)
+%                 \item \textbf{UKF / AUKF} (自适应无迹卡尔曼)
+%             \end{itemize}
+%         \end{block}
+
+%         \column{0.48\textwidth}
+%         \begin{block}{2. 在线参数辨识}
+%             实时更新电池模型参数（如内阻）：
+%             \begin{itemize}
+%                 \item \textbf{RLS} (递归最小二乘法)
+%                 \item \textbf{PRBM} (多项式回归模型)
+%             \end{itemize}
+%         \end{block}
+%     \end{columns}
+
+%     \vspace{0.4cm}
+%     \textbf{实验结论：}
+%     在宽温域 (-5\textcelsius $\sim$ 45\textcelsius) 测试中，以下组合表现最佳：
+%     \begin{center}
+%         \fcolorbox{red}{white}{\textbf{PRBM-AUKF} \quad \& \quad \textbf{RLS-AUKF}}
+%     \end{center}
+%     \footnotesize \textit{* AUKF (Adaptive UKF) 展现了比传统 EKF 更高的精度和鲁棒性。\footcite{hossain_kalman_2022}}
+% \end{frame}
+
+
+\begin{frame}
+    \frametitle{3.1 落地应用Ⅰ：信号处理领域}
+    
+    \begin{columns}[c] % [c] 参数使左右两列内容垂直居中对齐
+        % 左侧：放置图片
+        \column{0.5\textwidth}
+        \begin{figure}
+            \centering
+            % 建议根据侧边布局调整宽度，0.9\columnwidth 比较合适
+            \includegraphics[width=0.9\columnwidth]{figures/application.png}
+            % \caption{卡尔曼滤波典型应用场景}
+        \end{figure}
+
+        % 右侧：放置信号处理应用文字
+        \column{0.5\textwidth}
+        \textbf{信号处理主要应用} \\
+        \scriptsize (Key Signal Processing Applications)
+        
+        \vspace{0.3cm} % 增加一点间距
+        
+        \begin{itemize}
+            \item \textbf{时间序列模型识别}：如自回归(AR)、滑动平均(MA)等。
+            \item \textbf{移动目标定位与跟踪}。
+            \item \textbf{去噪、信号增强以及反卷积}。
+            \item \textbf{无线传感器网络与分布式估计}。
+            \item \textbf{生物医学应用}。
+        \end{itemize}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{3.2  落地应用Ⅱ：集成电路（IC）热管理}
+    \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north east, xshift=-0.5cm, yshift=-1.2cm] at (current page.north east) {
+        \includegraphics[width=3.5cm]{figures/thermal_management.jpg}
+    };
+\end{tikzpicture}
+    \small
+    \textbf{背景：} 随着高性能芯片（如 CPU、GPU、AI 加速器）功率密度增加，散热
+    \par
+    成为巨大挑战。
+
+    \vspace{0.2cm}
     \textbf{核心技术栈 (Tech Stack)：}
     \begin{columns}[t]
         \column{0.48\textwidth}
-        \begin{block}{1. 非线性滤波 (NLKFs)}
-            用于处理电池高度非线性的电压特性：
-            \begin{itemize}
-                \item \textbf{EKF / AEKF} (自适应扩展卡尔曼)
-                \item \textbf{UKF / AUKF} (自适应无迹卡尔曼)
-            \end{itemize}
+        \begin{block}{1. 热点估计：}
+            芯片内部无法布设无限多的温度传感器。卡尔曼滤波利用有限的片上温度传感器数据，结合芯片的热传导数学模型，实时估计整个硅片表面的温度分布情况（热图）。
         \end{block}
 
         \column{0.48\textwidth}
-        \begin{block}{2. 在线参数辨识}
-            实时更新电池模型参数（如内阻）：
-            \begin{itemize}
-                \item \textbf{RLS} (递归最小二乘法)
-                \item \textbf{PRBM} (多项式回归模型)
-            \end{itemize}
+        \begin{block}{2. 动态频率调整}
+            基于卡尔曼滤波预测的温度趋势，芯片可以更平滑地调整工作频率，避免因温度突增导致的系统降频或损坏。
         \end{block}
     \end{columns}
 
-    \vspace{0.4cm}
-    \textbf{实验结论：}
-    在宽温域 (-5\textcelsius $\sim$ 45\textcelsius) 测试中，以下组合表现最佳：
-    \begin{center}
-        \fcolorbox{red}{white}{\textbf{PRBM-AUKF} \quad \& \quad \textbf{RLS-AUKF}}
-    \end{center}
-    \footnotesize \textit{* AUKF (Adaptive UKF) 展现了比传统 EKF 更高的精度和鲁棒性。\footcite{hossain_kalman_2022}}
+    \vspace{0.3cm}
+    \textbf{为什么微电子领域青睐卡尔曼滤波？}
+    % 在宽温域 (-5\textcelsius $\sim$ 45\textcelsius) 测试中，以下组合表现最佳：
+    % \begin{center}
+    %     \fcolorbox{red}{white}{\textbf{PRBM-AUKF} \quad \& \quad \textbf{RLS-AUKF}}
+    % \end{center}
+    % \footnotesize \textit{* AUKF (Adaptive UKF) 展现了比传统 EKF 更高的精度和鲁棒性。\footcite{hossain_kalman_2022}}
+    \begin{itemize}
+        \item \textbf{硬件资源友好：}卡尔曼滤波的递归特性意味着它不需要存储海量的历史数据，非常适合内存和计算资源有限的微控制器（MCU）或嵌入式逻辑。
+        \item \textbf{抗电磁干扰：}微电子环境充满了高频开关噪声，卡尔曼滤波能通过设置测量噪声矩阵（$R$），有效地屏蔽电路层面的随机干扰。
+        \item \textbf{实时响应：}它的计算延迟极低，能够满足微秒级的实时控制需求。
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{3.3 落地应用Ⅲ：微纳制造过程控制}
+    \small
+    \textbf{背景：} 在半导体制造工艺（如光刻、化学机械抛光 CMP）中，传感器数据的精密反馈至关重要。
+    % \vspace{0.1cm}
+
+    \begin{columns}[t]
+        \column{0.45\textwidth}
+        % \textbf{挑战：}
+        %     \begin{itemize}
+        %         \item \textbf{测量噪声大：} 研磨液、高速旋转、高压导致传感器信号剧烈波动。
+        %         \item \textbf{抛光速率时变：} 抛光垫磨损、研磨液变化导致速率漂移。
+        %         \item \textbf{终点检测难：} 传统方法精度不足，易导致过抛或欠抛。
+        %     \end{itemize}
+
+        % \vspace{0.1cm}
+        \textbf{核心技术：利用卡尔曼滤波进行状态估计}
+            \begin{itemize}
+                \item \textbf{状态向量 $x_k = \begin{bmatrix} h_k \\ r_k \end{bmatrix}$：} 估计真实薄膜厚度 ($h_k$) 和实时抛光速率 ($r_k$)。
+                \item \textbf{动态模型：}
+                    \begin{itemize}
+                        \item $h_k = h_{k-1} - r_{k-1} \cdot \Delta t + w_{h}$ （厚度变化）
+                        \item $r_k = r_{k-1} + w_{r}$ （速率变化）
+                    \end{itemize}
+                \item \textbf{观测模型 $z_k = h_k + v_k$：} 传感器测量厚度（含严重噪声 $v_k$）。
+            \end{itemize}
+
+        \column{0.55\textwidth} % 右侧用于放置图片
+            \begin{figure}
+                \centering
+                % 请将图片保存为 "cmp_kalman_filter_示意图.png" 并与.tex文件放在同一目录
+                \includegraphics[width=0.9\textwidth]{figures/cmp_kalman_filter_示意图.png}
+                \label{fig:cmp_kalman}
+            \end{figure}
+            
+            \vspace{-0.35cm} % 调整图片下方的空间
+            \textbf{卡尔曼滤波的优势：}
+            \begin{itemize}
+                \item \textbf{实时去噪与平滑：} 过滤传感器信号的剧烈波动，输出平滑准确的厚度曲线。
+                \item \textbf{动态速率估计：} 实时修正抛光速率，适应工艺参数变化。
+                \item \textbf{精准终点预测：} 基于滤波后的厚度及预测，实现纳米级停机精度，避免过抛/欠抛。
+                \item \textbf{无延迟：} 相比传统低通滤波，实现实时去噪而不引入时间延迟。
+            \end{itemize}
+    \end{columns}
+
 \end{frame}
