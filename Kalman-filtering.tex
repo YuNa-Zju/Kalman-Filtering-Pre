@@ -12,7 +12,7 @@
 \usepackage{booktabs, float}
 \usepackage{tikz}           % 绘图支持
 % =========== 在这里插入这一行 ===========
-\usepackage[american]{circuitikz} 
+\usepackage[american]{circuitikz}
 % ======================================
 \usetikzlibrary{arrows, positioning}
 \graphicspath{{./figures/}} % 指定图片所在文件夹
@@ -22,6 +22,7 @@
 \setbeamertemplate{navigation symbols}{}
 \usepackage[backend=biber, style=ieee, autocite=footnote, citestyle=authortitle]{biblatex}
 \addbibresource{references.bib}
+\usepackage{multicol}
 % 首页信息设置
 \title[卡尔曼滤波算法]{从推算到最优估计：卡尔曼滤波}
 \subtitle{——信息工程中的数学建模与应用}
@@ -50,13 +51,32 @@
 \section{提纲}
 \begin{frame}
 	\frametitle{演讲提纲}
-	\tableofcontents
+	\begin{multicols}{2}
+		% hideallsubsections: 关键！主目录只看大标题，不然11章根本放不下
+		\tableofcontents[hideallsubsections]
+	\end{multicols}
 \end{frame}
+% \AtBeginSection[]
+% {
+% 	\begin{frame}
+% 		\frametitle{章节导航} % 这一页的标题
+% 		\tableofcontents[currentsection, hideallsubsections] % 自动生成目录，并高亮当前正在讲的章节
+% 	\end{frame}
+% }
+
 \AtBeginSection[]
 {
 	\begin{frame}
-		\frametitle{章节导航} % 这一页的标题
-		\tableofcontents[currentsection] % 自动生成目录，并高亮当前正在讲的章节
+		\frametitle{章节导航}
+		% 开启双栏环境，{2} 表示分两栏
+		\begin{multicols}{2}
+			% 缩小一点字号，防止11章内容撑爆
+			\small
+
+			% hideothersubsections: 只有当前章展开子节，其他章只显示大标题
+			% 这样11章的内容在两栏里应该能排得很漂亮
+			\tableofcontents[currentsection, hideothersubsections]
+		\end{multicols}
 	\end{frame}
 }
 
@@ -65,6 +85,8 @@
 \input{./source/数学模型构建.tex}
 
 \input{./source/核心算法.tex}
+
+\section[公式推导]{公式推导与证明}
 
 \input{source/一阶情况证明.tex}
 

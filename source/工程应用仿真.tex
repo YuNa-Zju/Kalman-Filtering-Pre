@@ -1,6 +1,7 @@
 %================================================================
-\section{工程应用与仿真}
+\section[应用]{工程应用与仿真}
 %================================================================
+\subsection{仿真案例}
 
 \begin{frame}
     \frametitle{仿真案例：一维小车位置追踪}
@@ -54,10 +55,11 @@
 %################################################################
 
 %------- 第一页：背景与痛点 -------
+\subsection{信息工程中的案例}
 \begin{frame}
     \frametitle{信息工程案例 (1/3)：高速移动通信的挑战}
     \textbf{背景：} 在高铁或车载通信场景（5G/V2X）中，终端的高速移动会产生严重的\textbf{多普勒频移 (Doppler Shift)}。
-    
+
     \vspace{0.3cm}
     \begin{columns}
         \column{0.6\textwidth}
@@ -105,7 +107,7 @@
 \begin{frame}
     \frametitle{信息工程案例 (3/3)：KF vs LS 性能对比}
     我们将卡尔曼滤波 (KF) 与传统的最小二乘 (LS) 估计算法进行对比。
-    
+
     \textbf{观测方程：} $y_k = s_k \bm{h}_k + v_k$ （$s_k$ 为已知导频）
 
     \vspace{0.3cm}
@@ -113,12 +115,12 @@
         \centering
         \begin{tabular}{l|l|l}
             \toprule
-            \textbf{特性} & \textbf{最小二乘 (LS)} & \textbf{卡尔曼滤波 (KF)} \\
+            \textbf{特性} & \textbf{最小二乘 (LS)} & \textbf{卡尔曼滤波 (KF)}   \\
             \midrule
-            原理 & 仅基于当前观测 $y_k$ & 融合当前观测 $y_k$ + 历史预测 \\
-            计算量 & 低 ($O(1)$) & 中等 ($O(N^3)$ 矩阵求逆) \\
-            抗噪性 & 差 (随 SNR 线性下降) & \textbf{强 (有效滤除高斯白噪)} \\
-            适用场景 & 静态/慢速环境 & \textbf{高速移动/低信噪比环境} \\
+            原理          & 仅基于当前观测 $y_k$      & 融合当前观测 $y_k$ + 历史预测   \\
+            计算量         & 低 ($O(1)$)         & 中等 ($O(N^3)$ 矩阵求逆)    \\
+            抗噪性         & 差 (随 SNR 线性下降)     & \textbf{强 (有效滤除高斯白噪)} \\
+            适用场景        & 静态/慢速环境            & \textbf{高速移动/低信噪比环境}  \\
             \bottomrule
         \end{tabular}
     \end{table}
@@ -128,11 +130,8 @@
 \end{frame}
 
 
-%################################################################
-% 案例二：微电子 - MEMS 传感器精度增强
-%################################################################
+\subsection{微电子中的案例}
 
-%------- 第一页：硬件痛点 -------
 \begin{frame}
     \frametitle{微电子案例 (1/3)：MEMS 传感器的误差源}
     在微电子制造中，低成本 MEMS 陀螺仪（如手机中的 IMU）受限于工艺，存在两类主要误差 \cite{woodman2007introduction}：
@@ -163,14 +162,14 @@
     \frametitle{微电子案例 (2/3)：状态扩维 (Augmented State)}
     为了消除零偏 (Bias)，我们将未知的 Bias 也视为一个\textbf{“状态”}放入滤波器中进行估计。
 
-    \textbf{系统状态向量：} $\bm{x} = [\theta, \ bias]^T$ 
-    
+    \textbf{系统状态向量：} $\bm{x} = [\theta, \ bias]^T$
+
     \vspace{0.3cm}
     \textbf{离散化状态空间模型：}
     \begin{equation}
-        \begin{bmatrix} \theta_k \\ b_k \end{bmatrix} = 
-        \begin{bmatrix} 1 & -\Delta t \\ 0 & 1 \end{bmatrix} 
-        \begin{bmatrix} \theta_{k-1} \\ b_{k-1} \end{bmatrix} + 
+        \begin{bmatrix} \theta_k \\ b_k \end{bmatrix} =
+        \begin{bmatrix} 1 & -\Delta t \\ 0 & 1 \end{bmatrix}
+        \begin{bmatrix} \theta_{k-1} \\ b_{k-1} \end{bmatrix} +
         \begin{bmatrix} \omega_{mea} \Delta t \\ 0 \end{bmatrix} + \bm{w}_k
     \end{equation}
 
@@ -195,12 +194,12 @@
             \item \textbf{观测：} 引入加速度计或磁力计数据作为“观测值” $z_k$。
             \item \textbf{校正：} 计算卡尔曼增益 $\bm{K}$，同时更新 \textbf{角度 $\theta$} 和 \textbf{零偏 $b$}。
         \end{enumerate}
-        
+
         \column{0.4\textwidth}
         \begin{exampleblock}{工程价值}
             \centering
             \textbf{精度提升 10$\times$}
-            
+
             \raggedright
             \small
             利用 KF 算法，可以将售价 \$5 的消费级 MEMS 芯片，提升至接近工业级 (\$50) 的性能表现。

@@ -1,11 +1,11 @@
 %================================================================
-\section{前沿探索}
+\section[前沿]{前沿探索}
 %================================================================
 
 % --- 第一部分：基于顶级综述的算法演进 (Khodarahmi et al., 2023) ---
-
+\subsection{算法演进全景}
 \begin{frame}
-    \frametitle{1. 算法演进全景 (Based on Top Review)}
+    \frametitle{1. 算法演进全景}
     \small
     卡尔曼滤波已发展为庞大的家族。针对不同场景，主流算法的特性对比如下\footcite{khodarahmi_review_2023}：
 
@@ -29,9 +29,9 @@
 \end{frame}
 
 % --- 第二部分：KF 与神经网络的结合 (Feng et al., 2023) ---
-
+\subsection{卡尔曼滤波遇上神经网络}
 \begin{frame}
-    \frametitle{2. 突破瓶颈：混合模型 (Hybrid Models) 的诞生}
+    \frametitle{2. 突破瓶颈：混合模型的诞生}
 
     \begin{columns}
         \column{0.6\textwidth}
@@ -95,40 +95,119 @@
     \textbf{融合的哲学：}
     \fcolorbox{blue}{white}{用 KF 的逻辑框架约束 ML 的发散，用 ML 的拟合能力弥补 KF 的模型缺陷。}
 \end{frame}
-% --- 第三部分：锂电池 SOC 估计应用 ---
+
+\subsection{前沿案例}
 
 \begin{frame}
-    \frametitle{3. 落地应用：锂电池 SOC 状态估计}
-    \small
-    \textbf{背景：} SOC (State of Charge) 是电池管理系统的核心。估算错误会导致过充/过放，造成永久性损伤。
+    \frametitle{雷达追踪中的“奇异点”}
 
-    \vspace{0.3cm}
-    \textbf{核心技术栈 (Tech Stack)：}
-    \begin{columns}[t]
-        \column{0.48\textwidth}
-        \begin{block}{1. 非线性滤波 (NLKFs)}
-            用于处理电池高度非线性的电压特性：
-            \begin{itemize}
-                \item \textbf{EKF / AEKF} (自适应扩展卡尔曼)
-                \item \textbf{UKF / AUKF} (自适应无迹卡尔曼)
-            \end{itemize}
-        \end{block}
+    在雷达追踪中，如果飞机做\textbf{协同转弯运动 (CTRV)}，状态向量包含转弯率 $\omega$：
+    $$ \bm{x} = [p_x, p_y, v, \psi, \omega]^T $$
 
-        \column{0.48\textwidth}
-        \begin{block}{2. 在线参数辨识}
-            实时更新电池模型参数（如内阻）：
-            \begin{itemize}
-                \item \textbf{RLS} (递归最小二乘法)
-                \item \textbf{PRBM} (多项式回归模型)
-            \end{itemize}
-        \end{block}
+    \textbf{状态转移方程：}
+    \begin{equation}
+        p_{x, k+1} = p_{x, k} + \frac{v_k}{\omega_k} (\sin(\psi_k + \omega_k \Delta t) - \sin(\psi_k))
+    \end{equation}
+
+    \begin{alertblock}{EKF 在此处的致命缺陷}
+        当我们尝试求雅可比矩阵 $\frac{\partial f}{\partial \omega}$ 时，分母含有 $\omega$。
+        \begin{itemize}
+            \item 当飞机\textbf{直线飞行}时，$\omega \to 0$。
+            \item 此时雅可比矩阵中会出现 $\frac{0}{0}$ 型的\textbf{除零奇点}，导致 EKF 数值爆炸。
+        \end{itemize}
+    \end{alertblock}
+
+    \textbf{UKF 优势：} 不需要求导，直接代入数值计算，完美避开数学奇点。\footcite{Li2003Survey}
+\end{frame}
+
+\begin{frame}
+    \frametitle{基础阶段：基于二阶 RC 模型的 SOC 估算}
+
+    \begin{columns}
+        \column{0.45\textwidth}
+        \centering
+        % 图形保持不变，视觉核心
+        \begin{tikzpicture}[scale=0.65, transform shape]
+            \draw (0,2) to[battery1, l=$V_{OCV}$] (0,0);
+            \draw (0,2) to[R, l=$R_0$, i=$I$] (2,2);
+            \draw (2,2) -- (3,2);
+            \draw (3,2) to[R, l=$R_p$] (3,0);
+            \draw (3,2) -- (4.5,2) to[C, l=$C_p$] (4.5,0) -- (3,0);
+            \draw (3,0) -- (0,0);
+            \draw (4.5,2) -- (6,2);
+            \draw (4.5,0) -- (6,0);
+            \draw[->] (6,1.8) -- (6,0.2) node[midway, right] {$V_{term}$};
+        \end{tikzpicture}
+
+        \column{0.55\textwidth}
+        \textbf{1. 物理建模：}
+        利用二阶 RC 电路模拟电池极化效应。
+
+        \vspace{0.2cm}
+        \textbf{2. 状态定义：}
+        $$ \bm{x} = [SOC, V_{p}]^T $$
+
+        \textbf{3. 核心挑战：}
+        $V_{OCV}$ 与 $SOC$ 呈非线性关系（查表），导致无法直接使用线性卡尔曼滤波 (KF)。
     \end{columns}
 
-    \vspace{0.4cm}
-    \textbf{实验结论：}
-    在宽温域 (-5\textcelsius $\sim$ 45\textcelsius) 测试中，以下组合表现最佳：
-    \begin{center}
-        \fcolorbox{red}{white}{\textbf{PRBM-AUKF} \quad \& \quad \textbf{RLS-AUKF}}
-    \end{center}
-    \footnotesize \textit{* AUKF (Adaptive UKF) 展现了比传统 EKF 更高的精度和鲁棒性。\footcite{hossain_kalman_2022}}
+    \vspace{0.3cm}
+    \begin{block}{工业界标准解法：EKF (扩展卡尔曼滤波)}
+        由于 $V_{OCV}$ 曲线相对平滑，我们通过\textbf{一阶泰勒展开}（求导）即可获得良好的线性化近似。
+        $$ \bm{H}_k = \left[ \frac{\partial V_{OCV}}{\partial SOC}, -1 \right] $$
+        此时，EKF 能够有效修正电流积分带来的累积误差。
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \frametitle{进阶挑战：电池老化带来的“模型失配”}
+
+    \textbf{现实困境：}
+    EKF 准确的前提是\textbf{模型参数 ($R_0, R_p, C_p$) 是已知且准确的}。
+    \begin{itemize}
+        \item 然而，随着电池老化和温度变化，内阻 $R_0$ 可能增加 100\%，电容 $C_p$ 也会漂移。
+        \item \alert{后果：} 如果坚持使用固定参数模型，EKF 会强行把模型误差“归咎”于 SOC，导致 SOC 估算严重偏离。
+    \end{itemize}
+
+    \vspace{0.5cm}
+    \textbf{解决方案：联合估算}
+    将参数也视为状态的一部分，构建\textbf{增强状态向量}：
+    $$ \bm{X}_{aug} = [\underbrace{SOC, V_p}_{\text{原状态}}, \underbrace{R_0, R_p, C_p}_{\text{漂移参数}}]^T $$
+    我们要同时估算这 5 个变量。
+\end{frame}
+
+% --- 第三阶段：EKF 的局限与 UKF 的登场 ---
+\begin{frame}
+    \frametitle{方法论对比：为何参数辨识需要 UKF？}
+
+    面对增强后的高维非线性系统，EKF 显得力不从心，而 UKF 展现出降维打击的优势：
+
+    \begin{columns}[t]
+        \column{0.5\textwidth}
+        \begin{alertblock}{EKF 的死穴：求导困难}
+            \footnotesize
+            EKF 需要计算雅可比矩阵 $\frac{\partial h}{\partial \bm{X}}$。
+            \begin{itemize}
+                \item 对 $R_0$ 求导很简单。
+                \item \textbf{但对 $C_p$ 求导极其痛苦}：$C_p$ 位于离散化方程的指数项 $e^{-\Delta t / (R_p C_p)}$ 中，且涉及递归。
+            \end{itemize}
+            \centering
+            $\Downarrow$ \\
+            推导繁琐，极易出错，数值不稳定。
+        \end{alertblock}
+
+        \column{0.5\textwidth}
+        \begin{exampleblock}{UKF 的优势：黑盒思维}
+            \footnotesize
+            UKF不需要计算雅可比矩阵。
+            \begin{itemize}
+                \item \textbf{直接仿真}：根据当前参数 $R, C$ 生成一组 Sigma 点，直接代入电路公式算出预测电压。
+                \item \textbf{自动拟合}：算法自动调整参数分布以逼近观测电压。
+            \end{itemize}
+            \centering
+            $\Downarrow$ \\
+            \textbf{无需推导公式，仅需物理模型代码。}
+        \end{exampleblock}
+    \end{columns}
+
 \end{frame}

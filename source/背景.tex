@@ -1,5 +1,5 @@
 %================================================================
-\section{背景引入}
+\section[背景]{背景引入}
 %================================================================
 
 % --- 第一页：直观痛点（增加代入感） ---
@@ -35,27 +35,27 @@
 % 		\textbf{如何走出最直的线？}
 % 	\end{columns}
 % \end{frame}
-
+\subsection{问题引入}
 \begin{frame}{信号估计问题}
-    \begin{itemize}
-        \item 问题：如何从包含噪声的观测序列中实时获知系统状态？
-        \item 例子：雷达系统、导航、语音信号增强、心电图去噪、信道状态估计等。
-        \item 如何获知系统的状态？
-        \begin{itemize}
-            \item 理论计算：
-			\begin{itemize}
-				\item 用动力学等方式对系统进行建模，获知系统的状态方程，根据上一时刻的状态获知这一时刻的状态。例如，用牛顿力学对小车进行建模，获取其坐标、速度、加速度的关系。
-				\item 然而，理论模型不总是理想的，存在模型无法完全涵盖的噪声，无法彻底消除。
-			\end{itemize}
-            \item 外部观测：
-			\begin{itemize}
-				\item 用各种传感器进行探测，进而获知系统状态。例如，通过小车车轮电机的传感器获知转速，通过雷达获知小车的位置。
-				\item 但是，传感器测量也存在一定误差，无法彻底消除。
-			\end{itemize}
-		\end{itemize}
+	\begin{itemize}
+		\item 问题：如何从包含噪声的观测序列中实时获知系统状态？
+		\item 例子：雷达系统、导航、语音信号增强、心电图去噪、信道状态估计等。
+		\item 如何获知系统的状态？
+		      \begin{itemize}
+			      \item 理论计算：
+			            \begin{itemize}
+				            \item 用动力学等方式对系统进行建模，获知系统的状态方程，根据上一时刻的状态获知这一时刻的状态。例如，用牛顿力学对小车进行建模，获取其坐标、速度、加速度的关系。
+				            \item 然而，理论模型不总是理想的，存在模型无法完全涵盖的噪声，无法彻底消除。
+			            \end{itemize}
+			      \item 外部观测：
+			            \begin{itemize}
+				            \item 用各种传感器进行探测，进而获知系统状态。例如，通过小车车轮电机的传感器获知转速，通过雷达获知小车的位置。
+				            \item 但是，传感器测量也存在一定误差，无法彻底消除。
+			            \end{itemize}
+		      \end{itemize}
 		\item 如果不处理这些噪声，计算值和观测值将直接用于识别和控制，可能造成判断失误和控制失稳。对于导航等不少对信号累积处理的系统中，误差将随时间累积，最终可能严重偏离实际情况。
-        % \item 技术演进动力：如何在有限的算力资源下，实现对非平稳系统状态的最优逼近。
-    \end{itemize}
+		      % \item 技术演进动力：如何在有限的算力资源下，实现对非平稳系统状态的最优逼近。
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -87,40 +87,44 @@
 	\end{columns}
 \end{frame}
 
+\subsection{历史中的解决办法}
+
 \begin{frame}{最小二乘法}
-    \begin{itemize}
-        \item 历史起源：1809年高斯用于预测谷神星轨道。
-        \item 数学模型：
-			设观测值$y \in \mathbb{R}^m$与真实值$x \in \mathbb{R}^n$线性相关，$n < m$，$x$满足$y = H x + v$，其中$H$为由建模得知的测量矩阵，$v$为噪声。求解$\arg_x \min \left|\left|y - H x\right|\right|^2$，得到$\hat{x} = \left(H^T H\right)^{-1}H^T y$
-        \item 劣势：
-        \begin{itemize}
-            \item 没有充分考虑系统时变的特点，不能很好地利用已有数据；
-            \item 如果只观测一次，某些次观测的异常值可能对系统造成影响；如果观测多次，系统状态在这一时段已经发生了变化。
-        \end{itemize}
-    \end{itemize}
+	\begin{itemize}
+		\item 历史起源：1809年高斯用于预测谷神星轨道。
+		\item 数学模型：
+		      设观测值$y \in \mathbb{R}^m$与真实值$x \in \mathbb{R}^n$线性相关，$n < m$，$x$满足$y = H x + v$，其中$H$为由建模得知的测量矩阵，$v$为噪声。求解$\arg_x \min \left|\left|y - H x\right|\right|^2$，得到$\hat{x} = \left(H^T H\right)^{-1}H^T y$
+		\item 劣势：
+		      \begin{itemize}
+			      \item 没有充分考虑系统时变的特点，不能很好地利用已有数据；
+			      \item 如果只观测一次，某些次观测的异常值可能对系统造成影响；如果观测多次，系统状态在这一时段已经发生了变化。
+		      \end{itemize}
+	\end{itemize}
 \end{frame}
 
 \begin{frame}{维纳滤波}
-    \begin{itemize}
-        \item 历史贡献：1940年代由诺伯特·维纳提出，将滤波问题引入随机过程的统计范畴。
-        \item 核心内容：利用信号与噪声的功率谱密度，在频域内设计传递函数。
-        \item 劣势：
-        \begin{itemize}
-            \item 同样，无法适应时变系统和动态信号。
-        \end{itemize}
-    \end{itemize}
+	\begin{itemize}
+		\item 历史贡献：1940年代由诺伯特·维纳提出，将滤波问题引入随机过程的统计范畴。
+		\item 核心内容：利用信号与噪声的功率谱密度，在频域内设计传递函数。
+		\item 劣势：
+		      \begin{itemize}
+			      \item 同样，无法适应时变系统和动态信号。
+		      \end{itemize}
+	\end{itemize}
 \end{frame}
 
+\subsection{卡尔曼的构想}
+
 \begin{frame}{卡尔曼的构想}
-    \begin{itemize}
-        \item \textbf{理论背景}：1960年，Rudolf Kalman 发表论文《A New Approach to Linear Filtering and Prediction Problems》，引入了状态空间分析法。
-        \item \textbf{核心思想}：
-        \begin{itemize}
-            \item 放弃维纳滤波的频域思想，转而使用线性差分方程描述系统演进。
-            \item 将预测值和观察值结合起来，估计真实值。
-        \end{itemize}
-        \item \textbf{早期困境}：由于其数学表达（矩阵运算与递归逻辑）过于超前，当时主流的信号处理学界对此反应冷淡，认为其缺乏工程实用性。
-    \end{itemize}
+	\begin{itemize}
+		\item \textbf{理论背景}：1960年，Rudolf Kalman 发表论文《A New Approach to Linear Filtering and Prediction Problems》，引入了状态空间分析法。
+		\item \textbf{核心思想}：
+		      \begin{itemize}
+			      \item 放弃维纳滤波的频域思想，转而使用线性差分方程描述系统演进。
+			      \item 将预测值和观察值结合起来，估计真实值。
+		      \end{itemize}
+		\item \textbf{早期困境}：由于其数学表达（矩阵运算与递归逻辑）过于超前，当时主流的信号处理学界对此反应冷淡，认为其缺乏工程实用性。
+	\end{itemize}
 \end{frame}
 % --- 第二页：历史背景与提出者（阿波罗时刻） ---
 \begin{frame}
